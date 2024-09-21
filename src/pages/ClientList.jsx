@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const clients = [
-  { id: 1, name: 'John Doe', dogName: 'Buddy' },
+  { id: 1, name: 'John Doe', dogName: 'Buddy' },//fix formatting
   { id: 2, name: 'Jane Smith', dogName: 'Rex' }
 ];
 
