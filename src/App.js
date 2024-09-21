@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
 import ClientList from './pages/ClientList';
 import AddClient from './pages/AddClient';
@@ -11,7 +11,7 @@ import Billing from './components/Billing';
 function App () {
   return (
     <Router>
-      <Switch>
+      <Routes>
         <Route exact path='/' component={Home} />
         <Route exact path='/clients' component={ClientList} />
         <Route exact path='/clients/add' component={AddClient} />
@@ -20,7 +20,7 @@ function App () {
         <Route exact path='/schedule' component={Schedule} />
         <Route exact path='/training-progress' component={TrainingProgress} />
         <Route exact path='/billing' component={Billing} />
-      </Switch>
+      </Routes>
     </Router>
   )
 }
