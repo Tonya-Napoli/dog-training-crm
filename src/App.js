@@ -8,21 +8,21 @@ import Schedule from './components/Schedule';
 import TrainingProgress from './components/TrainingProgress';
 import Billing from './components/Billing';
 
-function App () {
+function App() {
   return (
     <Router>
       <Routes>
-        <Route exact path='/' component={Home} />
-        <Route exact path='/clients' component={ClientList} />
-        <Route exact path='/clients/add' component={AddClient} />
-        <Route exact path='/clients/:id' component={ClientProfile} />
-        <Route exact path='/dashboard' component={Dashboard} />
-        <Route exact path='/schedule' component={Schedule} />
-        <Route exact path='/training-progress' component={TrainingProgress} />
-        <Route exact path='/billing' component={Billing} />
+        <Route path='/' element={<Home />} />
+        <Route path='/clients' element={<ClientList />} />
+        <Route path='/clients/add' element={<AddClient />} />
+        <Route path='/clients/:id' element={<ClientProfile />} />
+        <Route path='/dashboard' element={<Dashboard />} />
+        <Route path='/schedule' element={<Schedule />} />
+        <Route path='/training-progress' element={<TrainingProgress />} />
+        <Route path='/billing' element={<Billing />} />
       </Routes>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;
