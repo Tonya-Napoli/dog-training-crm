@@ -105,3 +105,16 @@ button:hover {
   padding: 20px;
 }
 
+/* Logo Styling */
+.logo img {
+  height: 50px;
+  width: auto;
+  margin-right: 20px;
+}
+
+.logo img:hover {
+  transform: scale(1.2);
+  transition: transform 0.3s ease;
+}
+
+
