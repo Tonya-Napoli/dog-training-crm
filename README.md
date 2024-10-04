@@ -5,10 +5,15 @@ The Dog Training CRM is a web application designed to manage client information,
 Features
 Client Management: Add, edit, and view client profiles, including dog details, training history, and contact information.
 Training Session Scheduling: Schedule one-on-one or group training sessions with automated reminders.
+
 Progress Tracking: Track and visualize each dog's training progress over time using interactive charts.
+
 Billing & Payments: Generate invoices and track payments for completed training sessions.
+
 Communication: Send automated follow-up emails, reminders, and messages to clients.
+
 Client Portal: Clients can log in to view their dog's progress and upcoming sessions.
+
 Getting Started
 Prerequisites
 Make sure you have the following installed on your machine:
