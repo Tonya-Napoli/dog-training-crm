@@ -87,3 +87,21 @@ button:hover {
   background-color: #218838;
 }
 
+/*Billing Component Styles */
+.billing {
+  text-align: center;
+  padding: 20px;
+}
+
+/*Dashboard Component Styles */
+.dashboard {
+  text-align: center;
+  padding: 20px;
+}
+
+/* Schedule Component Styles */
+.schedule {
+  text-align: center;
+  padding: 20px;
+}
+
