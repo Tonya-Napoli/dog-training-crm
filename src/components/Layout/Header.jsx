@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext'; 
 import '../App.css'; 
+import logo from '../../images/pp-logo.png';
+
 
 function Header() {
     const { user, login, logout } = useAuth();
