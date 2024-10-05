@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import './App.css';
+import './App.css'; //Global Styles
+import Header from './components/Layout/Header';
+//import Footer from './components/Layout/Footer';
 import Home from './pages/Home';
 import ClientList from './pages/ClientList';
 import AddClient from './pages/AddClient';
@@ -12,6 +14,10 @@ import Billing from './components/Billing';
 function App() {
   return (
     <Router>
+      <div className="app">
+        {/* Render Header on every route */}
+        <Header />
+        <main>
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/clients' element={<ClientList />} />
@@ -22,6 +28,8 @@ function App() {
         <Route path='/training-progress' element={<TrainingProgress />} />
         <Route path='/billing' element={<Billing />} />
       </Routes>
+        </main>
+        </div>
     </Router>
   );
 }
