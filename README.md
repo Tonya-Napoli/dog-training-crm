@@ -58,20 +58,52 @@ Serve the production build using a service like Netlify, Vercel, or your hosting
 Project Structure
 bash
 Copy code
-src/
-├── components/         # Reusable components for the app
-│   ├── ClientProfile.jsx
-│   ├── Dashboard.jsx
-│   ├── Schedule.jsx
-│   ├── TrainingProgress.jsx
-│   ├── Billing.jsx
-├── pages/              # Pages corresponding to different routes
-│   ├── Home.jsx
-│   ├── ClientList.jsx
-│   ├── AddClient.jsx
-├── App.js              # Main component handling routing
-├── index.js            # Entry point for the React app
-└── ...
+ App.css
+|   App.js                       # Main component handling routing
+|   App.test.js
+|   index.css
+|   index.js                     # Entry point for the React app
+|   reportWebVitals.js
+|   setupTests.js
+|
++---components             # Reusable components for the app
+|   |   Billing.jsx
+|   |   ClientProfile.jsx
+|   |   Dashboard.jsx
+|   |   Schedule.jsx
+|   |   TrainingProgress.jsx
+|   |
+|   \---Layout
+|           Footer.jsx
+|           Header.jsx
+|
++---contexts
+|       AuthContext.js
+|
++---images
+|       pp-logo.png
+|
++---pages                 # Pages corresponding to different routes
+|   |   AddClient.jsx
+|   |   ClientList.jsx
+|   |   Home.jsx
+|   |   login-button.js
+|   |   logout-button.js
+|   |   PrivateRoute.js
+|   |
+|   +---DataVisualizations
+|   |   \---Graphs
+|   +---Landing
+|   |       LandingContainer.jsx
+|   |       RenderLandingPage.jsx
+|   |
+|   \---NotFound
+|           index.jsx
+|           NotFoundPage.jsx
+|
+\---styles
+
+
 Key Components
 ClientProfile: Displays details about a specific client and their dog's training progress.
 Dashboard: A summary view with upcoming sessions, recent client activity, and key metrics.
