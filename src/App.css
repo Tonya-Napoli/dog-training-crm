@@ -12,13 +12,17 @@ h1 {
 }
 
 /* Container Styles */
-.home {
+.container {
   text-align: center;
   padding: 20px;
 }
 
+.margin-top {
+  margin-top: 20px;
+}
+
 /* Button Styles */
-button {
+.button {
   background-color: #007bff;
   color: white;
   border: none;
@@ -28,22 +32,16 @@ button {
   border-radius: 5px;
 }
 
-button:hover {
+.button:hover {
   background-color: #0056b3;
 }
 
-.home-container {
-  text-align: center;
-  padding: 20px;
+.login-button {
+  background-color: #28a745;
 }
 
-.home-button {
-  background-color: #007bff;
-  color: white;
-}
-
-.home-button:hover {
-  background-color: #0056b3;
+.login-button:hover {
+  background-color: #218838;
 }
 
 /* Utility Classes */
@@ -51,58 +49,8 @@ button:hover {
   text-align: center;
 }
 
-.btn {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  margin: 10px;
-}
-
-.btn:hover {
-  background-color: #0056b3;
-}
-
-.margin-top {
-  margin-top: 20px;
-}
-/* Login Component Styles */
-.login-container {
-  text-align: center;
-  padding: 20px;
-  margin-top: 50px;
-}
-
-.login-button {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  margin: 10px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.login-button:hover {
-  background-color: #218838;
-}
-
-/*Billing Component Styles */
-.billing {
-  text-align: center;
-  padding: 20px;
-}
-
-/*Dashboard Component Styles */
-.dashboard {
-  text-align: center;
-  padding: 20px;
-}
-
-/* Schedule Component Styles */
-.schedule {
+/* Component-Specific Styles */
+.billing, .dashboard, .schedule, .login-container {
   text-align: center;
   padding: 20px;
 }
@@ -112,11 +60,11 @@ button:hover {
   height: 50px;
   width: auto;
   margin-right: 20px;
+  transition: transform 0.3s ease;
 }
 
 .logo img:hover {
   transform: scale(1.2);
-  transition: transform 0.3s ease;
 }
 
 
