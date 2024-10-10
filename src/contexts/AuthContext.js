@@ -4,11 +4,11 @@ import React, { createContext, useState, useContext } from 'react';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(null); //user can be null, trainer, client or admin
 
 //Function to handle a loing, setting the user role
 const login = (role) => {
-    setUser({ role });
+    setUser({ role }); // Set the role to 'trainer', 'client', or 'admin'
 };
 
 //Function to handle logout
