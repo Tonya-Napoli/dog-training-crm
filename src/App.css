@@ -58,6 +58,7 @@ button:hover {
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  margin: 10px;
 }
 
 .btn:hover {
@@ -71,6 +72,7 @@ button:hover {
 .login-container {
   text-align: center;
   padding: 20px;
+  margin-top: 50px;
 }
 
 .login-button {
