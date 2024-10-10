@@ -1,47 +1,37 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext'; 
-import '../../App.css'; 
-import logo from '../../images/pp-logo.png';
+import { useAuth } from '../../contexts/AuthContext';
 
+const Header = () => {
+  const { user, logout } = useAuth();
 
-function Header() {
-    const { user, login, logout } = useAuth();
-
-    return (
-        <header className="header">
-            <div className="logo">
-                <Link to="/">
-                    <img src={logo} alt="Puppy Pros Logo" className="logo" />
-                </Link>
-            </div>
-            <nav>
-        {/* Conditionally render navigation links based on login status */}
-        {user && (
+  return (
+    <header className="header">
+      <h1>Dog Training CRM</h1>
+      <nav>
+        <Link to="/">Home</Link>
+        {user && user.role === 'trainer' && (
           <>
-            <Link to="/dashboard" className="nav-link">Dashboard</Link>
-            <Link to="/clients" className="nav-link">Clients</Link>
-            <Link to="/schedule" className="nav-link">Schedule</Link>
-            <Link to="/billing" className="nav-link">Billing</Link>
+            <Link to="/clients">Clients</Link>
+            <Link to="/schedule">Schedule</Link>
+            <Link to="/dashboard">Dashboard</Link>
           </>
         )}
-      </nav>
-      <div className="auth-buttons">
-        {/* Show login/logout button based on user status */}
-        {user ? (
-            <button className="logout-button" onClick={logout}>
-                Logout
-            </button>
-        ) : (
-            <button className="login-button" onClick={() => login('trainer')}>
-                Login
-            </button>
+        {user && user.role === 'admin' && (
+          <>
+            <Link to="/billing">Billing</Link>
+            <Link to="/dashboard">Dashboard</Link>
+          </>
         )}
-      </div>
+        {user ? (
+          <button onClick={logout}>Logout</button>
+        ) : (
+          <Link to="/login">Login</Link>
+        )}
+      </nav>
     </header>
-    );
-}
+  );
+};
 
 export default Header;
-
 
