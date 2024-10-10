@@ -7,7 +7,8 @@ const Header = () => {
 
   return (
     <header className="header">
-      <h1>Dog Training CRM</h1>
+      <h1>Welcome To Puppy Pros Training</h1>
+      <h2>{user ? `Welcome, ${user.name}!` : 'Please Login'}</h2>
       <nav>
         <Link to="/">Home</Link>
         {user && user.role === 'trainer' && (
