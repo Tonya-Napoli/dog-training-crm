@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import trainingData from '../mocks/mockTrainingData';
 import '../App.css';
 
 const TrainerDashboard = () => {
