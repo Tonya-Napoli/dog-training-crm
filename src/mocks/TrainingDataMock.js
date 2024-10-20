@@ -1,5 +1,5 @@
-// src/mocks/mockTrainingData.js
-const trainingData = [
+
+const trainingDataMock = [
     {
       clientId: 'client1',
       dogName: 'Buddy',
@@ -36,5 +36,5 @@ const trainingData = [
     },
   ];
   
-  export default trainingData;
+  export default trainingDataMock;
   

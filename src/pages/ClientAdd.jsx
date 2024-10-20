@@ -2,7 +2,7 @@ import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 
-const AddClient = () => {
+const ClientAdd = () => {
   const validationSchema = Yup.object({
     name: Yup.string().required('Required'),
     dogName: Yup.string().required('Required'),
@@ -33,4 +33,4 @@ const AddClient = () => {
   );
 };
 
-export default AddClient;
+export default ClientAdd;

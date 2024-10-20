@@ -1,4 +1,4 @@
-const users = [
+const usersMock = [
     {
       username: 'trainer1',
       password: 'password123',
@@ -16,5 +16,5 @@ const users = [
     },
   ];
   
-  export default users;
+  export default usersMock;
   

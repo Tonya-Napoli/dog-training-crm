@@ -1,10 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
+import DashboardTrainer from './pages/DashboardTrainer';
+import DashboardClient from './pages/DashboardClient';
+import DashboardAdmin from './pages/DashboardAdmin';
 import ClientList from './pages/ClientList';
-import AddClient from './pages/AddClient';
+import AddClient from './pages/ClientAdd';
 import ClientProfile from './components/ClientProfile';
-import Dashboard from './components/Dashboard';
 import Schedule from './components/Schedule';
 import Billing from './components/Billing';
 import Login from './pages/Login';
@@ -18,6 +20,16 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Home />} />
+        
+        {/* Trainer Dashboard and Routes */}
+        <Route
+          path="/dashboard-trainer"
+          element={
+            <PrivateRoute role="trainer">
+              <DashboardTrainer />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/clients"
           element={
@@ -43,18 +55,30 @@ function App() {
           }
         />
         <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute role="trainer">
-              <Dashboard />
-            </PrivateRoute>
-          }
-        />
-        <Route
           path="/schedule"
           element={
             <PrivateRoute role="trainer">
               <Schedule />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Client Dashboard */}
+        <Route
+          path="/dashboard-client"
+          element={
+            <PrivateRoute role="client">
+              <DashboardClient />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Admin Dashboard and Routes */}
+        <Route
+          path="/dashboard-admin"
+          element={
+            <PrivateRoute role="admin">
+              <DashboardAdmin />
             </PrivateRoute>
           }
         />
