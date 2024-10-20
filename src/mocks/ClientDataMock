@@ -1,0 +1,96 @@
+
+
+const clientDataMock = [
+  {
+    clientId: 'client1',
+    name: 'John Doe',
+    dogName: 'Buddy',
+    trainerId: 'trainer1',
+    contactInfo: {
+      email: 'john.doe@example.com',
+      phone: '123-456-7890',
+    },
+    sessions: [
+      {
+        date: '2024-10-10',
+        topic: 'Basic Obedience',
+        status: 'Completed',
+      },
+      {
+        date: '2024-10-17',
+        topic: 'Leash Walking',
+        status: 'Upcoming',
+      },
+    ],
+    progress: {
+      obedience: 'Good',
+      agility: 'Average',
+    },
+    billing: {
+      totalEarnings: 200,
+      outstanding: 50,
+    },
+  },
+  {
+    clientId: 'client2',
+    name: 'Jane Smith',
+    dogName: 'Rex',
+    trainerId: 'trainer2',
+    contactInfo: {
+      email: 'jane.smith@example.com',
+      phone: '987-654-3210',
+    },
+    sessions: [
+      {
+        date: '2024-10-12',
+        topic: 'House Training',
+        status: 'Completed',
+      },
+      {
+        date: '2024-10-19',
+        topic: 'Socialization',
+        status: 'Upcoming',
+      },
+    ],
+    progress: {
+      obedience: 'Average',
+      agility: 'Good',
+    },
+    billing: {
+      totalEarnings: 300,
+      outstanding: 0,
+    },
+  },
+  {
+    clientId: 'client3',
+    name: 'Alice Johnson',
+    dogName: 'Max',
+    trainerId: 'trainer1',
+    contactInfo: {
+      email: 'alice.johnson@example.com',
+      phone: '555-123-4567',
+    },
+    sessions: [
+      {
+        date: '2024-10-14',
+        topic: 'Crate Training',
+        status: 'Completed',
+      },
+      {
+        date: '2024-10-21',
+        topic: 'Recall Training',
+        status: 'Upcoming',
+      },
+    ],
+    progress: {
+      obedience: 'Excellent',
+      agility: 'Good',
+    },
+    billing: {
+      totalEarnings: 400,
+      outstanding: 100,
+    },
+  },
+];
+
+export default clientDataMock;
