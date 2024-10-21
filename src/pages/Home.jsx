@@ -7,8 +7,6 @@ import '../App.css';
 const Home = () => {
   return (
     <div className="home-container">
-      <Header />
-
       <section className="hero-section">
         <h1>Your Partner in Raising a Well-Behaved Dog</h1>
         <p>Join our community and give your dog the best training experience.</p>
