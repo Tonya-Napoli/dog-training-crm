@@ -11,31 +11,33 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+  // Function to handle login
+const handleLogin = (e) => {
+  e.preventDefault();
 
-    // Find the user in the mock users data
-    const user = users.find(
-      (u) => u.username === username && u.password === password
-    );
+  // Find the user in the mock users data
+  const user = users.find(
+    (u) => u.username === username && u.password === password
+  );
 
-    if (user) {
-      // Successful login, assign role
-      login(user.role);
+  if (user) {
+    // Successful login, assign role
+    login(user.username); // Pass the username to set the correct user in the AuthContext
 
-      // Redirect based on role
-      if (user.role === 'trainer') {
-        navigate('/trainer-dashboard');
-      } else if (user.role === 'client') {
-        navigate('/client-dashboard');
-      } else if (user.role === 'admin') {
-        navigate('/admin-dashboard');
-      }
-    } else {
-      // Invalid credentials
-      setError('Invalid username or password');
+    // Redirect based on role
+    if (user.role === 'trainer') {
+      navigate('/trainer-dashboard');
+    } else if (user.role === 'client') {
+      navigate('/client-dashboard');
+    } else if (user.role === 'admin') {
+      navigate('/admin-dashboard');
     }
-  };
+  } else {
+    // Invalid credentials
+    setError('Invalid username or password');
+  }
+};
+
 
   return (
     <div className="login-container">

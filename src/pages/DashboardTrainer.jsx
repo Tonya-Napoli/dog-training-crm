@@ -8,7 +8,7 @@ const DashboardTrainer = () => {
 
 return (
     <div className="dashboard-container">
-        <h1>Admin Dashboard</h1>
+        <h1>Trainer Dashboard</h1>
     <div className="dashboard-section">
         <h2>My Clients</h2>
         </div>
