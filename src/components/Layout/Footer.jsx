@@ -8,5 +8,5 @@ const Footer = () => {
       <footer>...</footer>
     );
   };
-  export default Footer; // Make sure this is a default export
+  export default Footer; 
   
