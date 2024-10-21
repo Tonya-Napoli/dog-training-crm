@@ -7,12 +7,12 @@ body, html {
 }
 
 /* Typography */
-h1 {
+h1, h2, h3 {
   color: #333;
 }
 
 /* Container Styles */
-.container {
+.container, .home-container {
   text-align: center;
   padding: 20px;
 }
@@ -22,7 +22,7 @@ h1 {
 }
 
 /* Button Styles */
-.button {
+.button, .cta-button {
   background-color: #007bff;
   color: white;
   border: none;
@@ -32,15 +32,21 @@ h1 {
   border-radius: 5px;
 }
 
-.button:hover {
+.button:hover, .cta-button:hover {
   background-color: #0056b3;
 }
 
-.login-button {
+.login-button, .login-link {
   background-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
 }
 
-.login-button:hover {
+.login-button:hover, .login-link:hover {
   background-color: #218838;
 }
 
@@ -56,15 +62,86 @@ h1 {
 }
 
 /* Logo Styling */
-.logo img {
+.logo img, .home-logo {
   height: 50px;
   width: auto;
   margin-right: 20px;
   transition: transform 0.3s ease;
 }
 
-.logo img:hover {
+.logo img:hover, .home-logo:hover {
   transform: scale(1.2);
 }
+
+/* Home Page Styles */
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #333;
+  color: white;
+}
+
+.home-nav a {
+  color: white;
+  margin: 0 10px;
+  text-decoration: none;
+}
+
+.hero-section {
+  padding: 60px 20px;
+  background-color: #007bff;
+  color: white;
+}
+
+.hero-section h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.hero-section p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+}
+
+.about-section, .features-section, .testimonials-section {
+  padding: 40px 20px;
+}
+
+.features-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.feature-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  width: 250px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.testimonials-section p {
+  font-style: italic;
+  margin-bottom: 15px;
+}
+
+.home-footer {
+  background-color: #333;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+.footer-nav a {
+  color: white;
+  margin: 0 10px;
+  text-decoration: none;
+}
+
 
 
