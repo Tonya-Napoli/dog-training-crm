@@ -1,17 +1,21 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   return (
     <header className="header">
       <h1>Welcome To Puppy Pros Training</h1>
       <h2>{user ? `Welcome, ${user.name}!` : 'Please Login'}</h2>
       <nav>
-        <Link to="/">Home</Link>
+        {/* Conditionally render "Home" link only if not on the home page */}
+        {location.pathname !== '/' && (
+          <Link to="/">Home</Link>
+        )}
+
         {user && user.role === 'trainer' && (
           <>
             <Link to="/clients">Clients</Link>
@@ -25,10 +29,16 @@ const Header = () => {
             <Link to="/dashboard">Dashboard</Link>
           </>
         )}
+
+        {/* Show Logout button if user is logged in, otherwise show Login button */}
         {user ? (
-          <button onClick={logout}>Logout</button>
+          <button onClick={logout} className="logout-button">Logout</button>
         ) : (
-          <Link to="/login">Login</Link>
+          location.pathname !== '/login' && (
+            <button className="login-button">
+              <Link to="/login" className="login-link">Login</Link>
+            </button>
+          )
         )}
       </nav>
     </header>
