@@ -9,7 +9,8 @@ const Header = () => {
   return (
     <header className="header">
       <h1>Welcome To Puppy Pros Training</h1>
-      <h2>{user ? `Welcome, ${user.name}!` : 'Please Login'}</h2>
+      {user && <h2>Welcome, {user.name}!</h2>}
+
       <nav>
         {/* Conditionally render "Home" link only if not on the home page */}
         {location.pathname !== '/' && (
