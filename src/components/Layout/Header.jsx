@@ -9,7 +9,7 @@ const Header = () => {
   return (
     <header className="header">
       <div clasName="logo">
-        <img src="/pp-logo192.png" alt="Puppy Pros Training Logo" className="logo" />
+        <img src="/pp-logo_inPixio.png" alt="Puppy Pros Training Logo" className="logo" />
       </div>
       <h1>Welcome To Puppy Pros Training</h1>
       {user && <h2>Welcome, {user.name}!</h2>}
