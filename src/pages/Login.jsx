@@ -7,62 +7,67 @@ import '../App.css';
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
 
-  // Function to handle login
-const handleLogin = (e) => {
-  e.preventDefault();
+  const handleLogin = (e) => {
+    e.preventDefault();
 
-  // Find the user in the mock users data
-  const user = users.find(
-    (u) => u.username === username && u.password === password
-  );
-
-  if (user) {
-    // Successful login, assign role
-    login(user.username); // Pass the username to set the correct user in the AuthContext
-
-    // Redirect based on role
-    if (user.role === 'trainer') {
+    // Simulated login (replace with actual authentication logic)
+    if (email === 'trainer@example.com' && password === 'password123') {
+      login('trainer');
       navigate('/trainer-dashboard');
-    } else if (user.role === 'client') {
-      navigate('/client-dashboard');
-    } else if (user.role === 'admin') {
+    } else if (email === 'admin@example.com' && password === 'password123') {
+      login('admin');
       navigate('/admin-dashboard');
+    } else if (email === 'client@example.com' && password === 'password123') {
+      login('client');
+      navigate('/client-dashboard');
+    } else {
+      setError('Invalid email or password');
     }
-  } else {
-    // Invalid credentials
-    setError('Invalid username or password');
-  }
-};
-
+  };
 
   return (
     <div className="login-container">
-      <h2>Login</h2>
-      <form onSubmit={handleLogin}>
-        <div>
-          <label>Username:</label>
+      <form className="login-form" onSubmit={handleLogin}>
+        <h2>Login</h2>
+        {error && <p className="error">{error}</p>}
+        <div className="form-group">
+          <label htmlFor="email">Email:</label>
           <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>
-        <div>
-          <label>Password:</label>
+        <div className="form-group">
+          <label htmlFor="password">Password:</label>
           <input
             type="password"
+            id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
-        {error && <p className="error">{error}</p>}
-        <button type="submit" className="btn">Login</button>
+        <div className="form-group remember-me">
+          <input
+            type="checkbox"
+            id="rememberMe"
+            checked={rememberMe}
+            onChange={() => setRememberMe(!rememberMe)}
+          />
+          <label htmlFor="rememberMe">Remember Me</label>
+        </div>
+        <button type="submit" className="login-button">Login</button>
+        <div className="forgot-password">
+          <a href="/forgot-password">Forgot Password?</a>
+        </div>
       </form>
     </div>
   );
