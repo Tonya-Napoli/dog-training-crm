@@ -19,6 +19,7 @@ function App() {
       <Header />
       <Routes>
         <Route path="/login" element={<Login />} />
+        
         <Route path="/" element={<Home />} />
         
         {/* Trainer Dashboard and Routes */}
