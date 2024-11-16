@@ -11,6 +11,7 @@ import Schedule from './components/Schedule';
 import Billing from './components/Billing';
 import Login from './pages/Login';
 import PrivateRoute from './pages/PrivateRoute';
+import ForgotPassword from './components/ForgotPassword';
 import Header from './components/Layout/Header';
 
 function App() {
