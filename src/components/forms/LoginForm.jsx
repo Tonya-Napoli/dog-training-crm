@@ -1,29 +1,31 @@
 import React, { useState } from 'react';
 
 const LoginForm = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const loginSuccess = onLogin(username, password);
+
+    // Pass email and password to the parent component's onLogin function
+    const loginSuccess = onLogin(email, password);
 
     if (!loginSuccess) {
-      setError('Invalid username or password');
+      setError('Invalid email or password');
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="login-form">
       <div>
-        <label>Username:</label>
+        <label>Email:</label>
         <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
-          autoComplete="username"
+          autoComplete="email"
         />
       </div>
       <div>

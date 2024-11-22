@@ -5,23 +5,24 @@ import usersMock from '../mocks/usersMock';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // User can be null, trainer, client, or admin
+  const [user, setUser] = useState(null); // Current logged-in user (can be null, trainer, client, or admin)
 
-  // Function to handle login, setting the user object
-  const login = (username) => {
-    // Find the user from the mock data based on the username
-    const foundUser = usersMock.find((mockUser) => mockUser.username === username);
+  // Function to handle login
+  const login = (user) => {
+    console.log('Login called with:', user);
 
-    if (foundUser) {
-      setUser(foundUser); // Set the full user object here
+    if (user) {
+      setUser(user); // Store the full user object in state
+      console.log('User logged in:', user);
     } else {
-      console.error('User not found');
+      console.error('User not found or invalid credentials');
     }
   };
 
   // Function to handle logout
   const logout = () => {
-    setUser(null);
+    setUser(null); // Clear the user state
+    console.log('User logged out');
   };
 
   return (
@@ -33,6 +34,7 @@ export const AuthProvider = ({ children }) => {
 
 // Custom hook to use the AuthContext
 export const useAuth = () => useContext(AuthContext);
+
 
 
 
