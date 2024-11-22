@@ -26,7 +26,7 @@ function App() {
 
         {/* Trainer Dashboard and Nested Routes */}
         <Route
-          path="/dashboard/trainer"
+          path="/trainer-dashboard"
           element={
             <PrivateRoute role="trainer">
               <DashboardTrainer />
@@ -69,7 +69,7 @@ function App() {
 
         {/* Client Dashboard */}
         <Route
-          path="/dashboard/client"
+          path="client-dashboard"
           element={
             <PrivateRoute role="client">
               <DashboardClient />
@@ -79,7 +79,7 @@ function App() {
 
         {/* Admin Dashboard and Nested Routes */}
         <Route
-          path="/dashboard/admin"
+          path="admin-dashboard"
           element={
             <PrivateRoute role="admin">
               <DashboardAdmin />

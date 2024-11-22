@@ -22,3 +22,4 @@ const DashboardTrainer = () => {
 };
 
 export default DashboardTrainer;
+
