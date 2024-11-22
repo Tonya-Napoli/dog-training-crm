@@ -19,55 +19,57 @@ function App() {
     <Router>
       <Header />
       <Routes>
+        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/" element={<Home />} />
-        
-        {/* Trainer Dashboard and Routes */}
+
+        {/* Trainer Dashboard and Nested Routes */}
         <Route
-          path="/trainer-dashboard"
+          path="/dashboard/trainer"
           element={
             <PrivateRoute role="trainer">
               <DashboardTrainer />
             </PrivateRoute>
           }
-        />
-        <Route
-          path="/clients"
-          element={
-            <PrivateRoute role="trainer">
-              <ClientList />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/clients/add"
-          element={
-            <PrivateRoute role="trainer">
-              <AddClient />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/client/:id"
-          element={
-            <PrivateRoute role="trainer">
-              <ClientProfile />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/schedule"
-          element={
-            <PrivateRoute role="trainer">
-              <Schedule />
-            </PrivateRoute>
-          }
-        />
+        >
+          <Route
+            path="clients"
+            element={
+              <PrivateRoute role="trainer">
+                <ClientList />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="clients/add"
+            element={
+              <PrivateRoute role="trainer">
+                <AddClient />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="client/:id"
+            element={
+              <PrivateRoute role="trainer">
+                <ClientProfile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="schedule"
+            element={
+              <PrivateRoute role="trainer">
+                <Schedule />
+              </PrivateRoute>
+            }
+          />
+        </Route>
 
         {/* Client Dashboard */}
         <Route
-          path="/client-dashboard"
+          path="/dashboard/client"
           element={
             <PrivateRoute role="client">
               <DashboardClient />
@@ -75,28 +77,30 @@ function App() {
           }
         />
 
-        {/* Admin Dashboard and Routes */}
+        {/* Admin Dashboard and Nested Routes */}
         <Route
-          path="/admin-dashboard"
+          path="/dashboard/admin"
           element={
             <PrivateRoute role="admin">
               <DashboardAdmin />
             </PrivateRoute>
           }
-        />
-        <Route
-          path="/billing"
-          element={
-            <PrivateRoute role="admin">
-              <Billing />
-            </PrivateRoute>
-          }
-        />
+        >
+          <Route
+            path="billing"
+            element={
+              <PrivateRoute role="admin">
+                <Billing />
+              </PrivateRoute>
+            }
+          />
+        </Route>
       </Routes>
     </Router>
   );
 }
 
 export default App;
+
 
 
