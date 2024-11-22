@@ -3,8 +3,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import users from '../mocks/usersMock';
-import '../App.css';
-
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');

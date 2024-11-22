@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import users from '../mocks/usersMock';
-import '../App.css';
 
 const Login = () => {
   const { login } = useAuth();
@@ -37,38 +36,70 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <h2>Login</h2>
-      <form onSubmit={handleLogin}>
-        <div>
-          <label>Email:</label>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+      <h2 className="text-3xl font-bold text-heading mb-6">Login</h2>
+      <form
+        onSubmit={handleLogin}
+        className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96"
+      >
+        <div className="mb-4">
+          <label
+            htmlFor="email"
+            className="block text-heading text-sm font-bold mb-2"
+          >
+            Email
+          </label>
           <input
+            id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="username"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-heading leading-tight focus:outline-none focus:ring focus:ring-accent-cyan"
           />
         </div>
-        <div>
-          <label>Password:</label>
+        <div className="mb-6">
+          <label
+            htmlFor="password"
+            className="block text-heading text-sm font-bold mb-2"
+          >
+            Password
+          </label>
           <input
+            id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-heading leading-tight focus:outline-none focus:ring focus:ring-accent-cyan"
           />
         </div>
-        {error && <p className="error">{error}</p>}
-        <button type="submit" className="btn">Login</button>
+        {error && (
+          <p className="text-danger text-xs italic mb-4">{error}</p>
+        )}
+        <div className="flex items-center justify-between">
+          <button
+            type="submit"
+            className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            Login
+          </button>
+          <Link
+            to="/forgot-password"
+            className="inline-block align-baseline font-bold text-sm text-link hover:underline"
+          >
+            Forgot Password?
+          </Link>
+        </div>
       </form>
-      <Link to="/forgot-password" className="forgot-password">Forgot Password?</Link>
     </div>
   );
 };
 
 export default Login;
+
 
 
 

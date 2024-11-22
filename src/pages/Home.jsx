@@ -2,8 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Layout/Header'; 
 import Footer from '../components/Layout/Footer'; 
-import '../App.css'; 
-
 const Home = () => {
   return (
     <div className="home-container">
