@@ -1,21 +1,15 @@
-// src/pages/Login.jsx
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import users from '../mocks/usersMock';
+import LoginForm from '../components/forms/LoginForm';
 import '../App.css';
 
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-
+  const handleLogin = (username, password) => {
     // Find the user in the mock users data
     const user = users.find(
       (u) => u.username === username && u.password === password
@@ -33,41 +27,21 @@ const Login = () => {
       } else if (user.role === 'admin') {
         navigate('/admin-dashboard');
       }
-    } else {
-      // Invalid credentials
-      setError('Invalid username or password');
+      return true; // Login successful
     }
+
+    return false; // Login failed
   };
 
   return (
     <div className="login-container">
       <h2>Login</h2>
-      <form onSubmit={handleLogin}>
-        <div>
-          <label>Username:</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {error && <p className="error">{error}</p>}
-        <button type="submit" className="btn">Login</button>
-      </form>
+      <LoginForm onLogin={handleLogin} />
       <Link to="/forgot-password" className="forgot-password">Forgot Password?</Link>
     </div>
   );
 };
 
 export default Login;
+
 
