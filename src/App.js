@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import PrivateRoute from './pages/PrivateRoute';
 import ForgotPassword from './components/ForgotPassword';
 import Header from './components/Layout/Header';
+import GetStarted from './pages/GetStarted';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/" element={<Home />} />
+        <Route path="/get-started" element={<GetStarted />} />
 
         {/* Trainer Dashboard and Nested Routes */}
         <Route
