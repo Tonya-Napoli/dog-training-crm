@@ -1,18 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Header from '../components/Layout/Header';
 import Footer from '../components/Layout/Footer';
 
 const Home = () => {
   return (
     <div className="bg-background text-heading">
-      <Header />
-
       {/* Hero Section */}
-      <section className="hero-section flex flex-col items-center justify-center min-h-screen bg-primary text-white text-center p-6">
+      <section className="flex flex-col items-center justify-center min-h-screen bg-primary text-white text-center p-6">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
           Your Partner in Raising a Well-Behaved Dog
-        </h1>np
+        </h1>
         <p className="text-base sm:text-lg lg:text-xl mb-6 max-w-2xl">
           Join our community and give your dog the best training experience.
         </p>
@@ -25,7 +22,7 @@ const Home = () => {
       </section>
 
       {/* About Section */}
-      <section className="about-section py-12 sm:py-16 px-6 text-center">
+      <section className="py-12 sm:py-16 px-6 text-center">
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
           About Puppy Pros Training
         </h2>
@@ -37,12 +34,12 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="features-section py-12 sm:py-16 px-6 bg-gray-100">
+      <section className="py-12 sm:py-16 px-6 bg-gray-100">
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-8">
           Our Features
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <div className="feature-card bg-white shadow rounded p-6">
+          <div className="bg-white shadow rounded p-6">
             <h3 className="text-lg sm:text-xl font-bold mb-2">
               Track Training Progress
             </h3>
@@ -50,7 +47,7 @@ const Home = () => {
               Monitor how your dog is mastering new skills.
             </p>
           </div>
-          <div className="feature-card bg-white shadow rounded p-6">
+          <div className="bg-white shadow rounded p-6">
             <h3 className="text-lg sm:text-xl font-bold mb-2">
               Convenient Scheduling
             </h3>
@@ -58,7 +55,7 @@ const Home = () => {
               Book your training sessions with ease.
             </p>
           </div>
-          <div className="feature-card bg-white shadow rounded p-6">
+          <div className="bg-white shadow rounded p-6">
             <h3 className="text-lg sm:text-xl font-bold mb-2">
               Personalized Training
             </h3>
@@ -70,7 +67,7 @@ const Home = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="testimonials-section py-12 sm:py-16 px-6 text-center bg-background">
+      <section className="py-12 sm:py-16 px-6 text-center bg-background">
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-8">
           What Our Clients Say
         </h2>
@@ -88,4 +85,7 @@ const Home = () => {
 };
 
 export default Home;
+
+
+
 
