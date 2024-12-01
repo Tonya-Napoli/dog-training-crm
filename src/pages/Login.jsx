@@ -37,7 +37,7 @@ const Login = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-      <h2 className="text-3xl font-bold text-heading mb-6">Login</h2>
+      <h2 className="text-3xl font-bold text-red text-heading mb-6">Login</h2>
       <form
         onSubmit={handleLogin}
         className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96"
@@ -88,7 +88,7 @@ const Login = () => {
           </button>
           <Link
             to="/forgot-password"
-            className="inline-block align-baseline font-bold text-sm text-link hover:underline"
+            className="inline-block align-baseline font-bold text-red text-sm text-link hover:underline"
           >
             Forgot Password?
           </Link>

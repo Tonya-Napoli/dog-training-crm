@@ -6,8 +6,8 @@ const Home = () => {
   return (
     <div className="bg-background text-heading">
       {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center min-h-screen bg-primary text-white text-center p-6">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+      <section className="flex flex-col items-center justify-center min-h-screen bg-primary text-brown text-center p-6">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-pacifico mb-4">
           Your Partner in Raising a Well-Behaved Dog
         </h1>
         <p className="text-base sm:text-lg lg:text-xl mb-6 max-w-2xl">
@@ -23,7 +23,7 @@ const Home = () => {
 
       {/* About Section */}
       <section className="py-12 sm:py-16 px-6 text-center">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-pacifico mb-4">
           About Puppy Pros Training
         </h2>
         <p className="text-sm sm:text-base lg:text-lg max-w-4xl mx-auto">
@@ -35,7 +35,7 @@ const Home = () => {
 
       {/* Features Section */}
       <section className="py-12 sm:py-16 px-6 bg-gray-100">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-8">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-pacifico text-center mb-8">
           Our Features
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -68,7 +68,7 @@ const Home = () => {
 
       {/* Testimonials Section */}
       <section className="py-12 sm:py-16 px-6 text-center bg-background">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-8">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-pacifico font-bold mb-8">
           What Our Clients Say
         </h2>
         <p className="text-sm sm:text-base lg:text-lg max-w-2xl mx-auto italic text-neutral mb-4">

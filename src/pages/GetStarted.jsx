@@ -15,7 +15,7 @@ const GetStartedPage = () => {
 
       {/* What We Offer Section */}
       <section className="mb-12 max-w-4xl">
-        <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-6 text-center">
+        <h2 className="text-2xl sm:text-3xl font-bold font-pacifico text-primary mb-6 text-center">
           What We Offer
         </h2>
         <ul className="list-disc pl-5 space-y-2 text-neutral text-base sm:text-lg">
