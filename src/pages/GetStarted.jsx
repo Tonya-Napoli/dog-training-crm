@@ -1,38 +1,97 @@
 import React from "react";
 
-const GetStarted = () => {
+const GetStartedPage = () => {
   return (
-    <div>
-      <h1>Our Programs</h1>
-      <p>Welcome to our dog walking app! Here's what you need to know:</p>
-      <ul>
-        <li>In-home training sessions for your dog.</li>
-        <li>Remote Private Training.</li>
-        <li>AKC Fit Dog Training.</li>
-        <li>Nose Work & Mental Enrichment Activities.</li>
-      </ul>
-      <p>
-        <h2>Contact Us For More Information</h2>
-        <p>Phone: (321)334-2934</p>
-        <p>Email: pupmail@puppyprostraining.com</p>
-      </p>
-      <h2>Request a Free Consulation</h2>
-      <form>
-        <label>Name:
-            <input type="text" name="name" required />
+    <div className="bg-background text-heading min-h-screen flex flex-col items-center px-4 py-8">
+      {/* Hero Section */}
+      <section className="text-center mb-12">
+        <h1 className="text-4xl sm:text-5xl font-bold text-primary mb-4">
+          Welcome to Puppy Pros Training
+        </h1>
+        <p className="text-lg sm:text-xl text-neutral max-w-2xl mx-auto">
+          Discover how we can help you and your furry friend build a better bond.
+        </p>
+      </section>
+
+      {/* What We Offer Section */}
+      <section className="mb-12 max-w-4xl">
+        <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-6 text-center">
+          What We Offer
+        </h2>
+        <ul className="list-disc pl-5 space-y-2 text-neutral text-base sm:text-lg">
+          <li>In-home dog training sessions</li>
+          <li>Remote private training</li>
+          <li>AKC Fit Dog training</li>
+          <li>Nose work activities</li>
+        </ul>
+      </section>
+
+      {/* Contact Us Section */}
+      <section className="w-full max-w-3xl bg-white shadow-md rounded-lg p-6 mb-12">
+        <h2 className="text-xl sm:text-2xl font-bold text-primary mb-4 text-center">
+          Contact Us
+        </h2>
+        <div className="text-center text-neutral mb-6">
+          <p>Phone: <span className="text-link">321-334-2924</span></p>
+          <p>Email: <span className="text-link">pupmail@puppyprostraining.com</span></p>
+        </div>
+        <h3 className="text-lg font-semibold text-heading mb-2">
+          Request a Free Consultation
+        </h3>
+        <form className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-heading mb-1">
+              Name
             </label>
-        <label>Email:
-            <input type="email" name="email" required />
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-primary focus:outline-none"
+              placeholder="Enter your name"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-heading mb-1">
+              Email
             </label>
-        <label>Phone:
-            <input type="tel" name="phone" required />
-        </label>
-        <label>Message:
-            <textarea name="message" required></textarea>
-        </label>
-        <button type="submit">Submit</button>
-      </form>
+            <input
+              type="email"
+              className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-primary focus:outline-none"
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-heading mb-1">
+              Phone
+            </label>
+            <input
+              type="tel"
+              className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-primary focus:outline-none"
+              placeholder="Enter your phone number"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-heading mb-1">
+              Message
+            </label>
+            <textarea
+              className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-primary focus:outline-none"
+              rows="4"
+              placeholder="Write your message"
+            />
+          </div>
+          <button
+            type="submit"
+            className="bg-primary text-white font-bold py-2 px-4 rounded hover:bg-accent-teal transition duration-200 w-full"
+          >
+            Submit
+          </button>
+        </form>
+      </section>
     </div>
   );
 };
-export default GetStarted;
+
+export default GetStartedPage;
