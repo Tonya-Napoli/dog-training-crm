@@ -1,11 +1,11 @@
 import React from "react";
-
+//import '@fontsource/pacifico'; // Defaults to regular weight
 const GetStartedPage = () => {
   return (
     <div className="bg-background text-heading min-h-screen flex flex-col items-center px-4 py-8">
       {/* Hero Section */}
       <section className="text-center mb-12">
-        <h1 className="text-4xl sm:text-5xl font-bold text-primary mb-4">
+        <h1 className="text-4xl sm:text-5xl font-bold font-pacifico text-red mb-4">
           Welcome to Puppy Pros Training
         </h1>
         <p className="text-lg sm:text-xl text-neutral max-w-2xl mx-auto">
@@ -31,16 +31,16 @@ const GetStartedPage = () => {
         <h2 className="text-xl sm:text-2xl font-bold text-primary mb-4 text-center">
           Contact Us
         </h2>
-        <div className="text-center text-neutral mb-6">
-          <p>Phone: <span className="text-link">321-334-2924</span></p>
-          <p>Email: <span className="text-link">pupmail@puppyprostraining.com</span></p>
+        <div className="text-center text-brown mb-6">
+          <p>Phone: <span className="text-link text-red">321-334-2924</span></p>
+          <p>Email: <span className="text-link text-red">pupmail@puppyprostraining.com</span></p>
         </div>
-        <h3 className="text-lg font-semibold text-heading mb-2">
+        <h3 className="text-lg font-semibold text-brown text-heading mb-2">
           Request a Free Consultation
         </h3>
         <form className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-heading mb-1">
+            <label className="block text-sm text-brown font-medium text-heading mb-1">
               Name
             </label>
             <input

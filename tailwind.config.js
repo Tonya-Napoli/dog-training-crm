@@ -2,6 +2,9 @@ module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        pacifico: ['Pacifico', 'cursive'],
+      },
       colors: {
         primary: {
           DEFAULT: '#47cbde', // Primary action color
@@ -19,6 +22,12 @@ module.exports = {
         link: {
           DEFAULT: '#45affd', // Link color
           hover: '#4747cbde', // Link hover color
+        },
+        red: {
+          DEFAULT: '#ff3131', // Red color
+        },
+        brown: {
+          DEFAULT: '#302826', // Brown color
         },
       },
     },
