@@ -21,6 +21,9 @@ const Login = () => {
                 <button className="btn" onClick={() => handleLogin('client')}>
                 Login as Client
                 </button>
+                <button className="btn" onClick={() => handleLogin('client')}>
+                Login as Admin
+                </button>
         </div>
     );
     };
