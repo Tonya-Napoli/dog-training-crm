@@ -9,7 +9,7 @@ const GetStartedPage = () => {
           Welcome to Puppy Pros Training
         </h1>
         <p className="text-lg sm:text-xl text-neutral max-w-2xl mx-auto">
-          Discover how we can help you and your furry friend build a better bond.
+          Discover how we can help you and your furry friend excelerate your training!
         </p>
       </section>
 
