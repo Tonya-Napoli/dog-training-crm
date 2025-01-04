@@ -21,8 +21,6 @@ const GetStartedPage = () => {
         <ul className="list-disc pl-5 space-y-2 text-neutral text-base sm:text-lg">
           <li>In-home dog training sessions</li>
           <li>Remote private training</li>
-          <li>AKC Fit Dog training</li>
-          <li>Nose work activities</li>
         </ul>
       </section>
 
