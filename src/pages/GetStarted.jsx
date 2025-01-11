@@ -30,7 +30,7 @@ const GetStartedPage = () => {
           Contact Us
         </h2>
         <div className="text-center text-brown mb-6">
-          <p>Phone: <span className="text-link text-red">(844)787-7926</span></p>
+          <p>Phone: <span className="text-link text-red">(321)-209-0504</span></p>
           <p>Email: <span className="text-link text-red">trainingchat@puppyprostraining.com</span></p>
         </div>
         <h3 className="text-lg font-semibold text-brown text-heading mb-2">
