@@ -18,8 +18,8 @@ app.post('/send-email', async (req, res) => {
  const { to, subject, text } = req.body;
 
  const msg = {
-   from: 'Dog Training CRM <tonya.goodell@outlook.com>',
-   to: 'tonya.goodell@outlook.com',
+   from: 'Dog Training CRM <pupmail@puppyprostraining.com>',
+   to: 'pupmail@puppyprostraining.com',
    subject,
    text,
  };
