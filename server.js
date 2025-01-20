@@ -1,36 +1,25 @@
 require('dotenv').config(); // For local development
 
-
 const express = require('express');
 const bodyParser = require('body-parser');
-const mailgun = require('mailgun-js');
-
-
-
+const mailgun = require('@sendgrid/mail');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-
 // Middleware
 app.use(bodyParser.json());
 
-
-// Mailgun configuration
-const mg = mailgun({
- apiKey: process.env.MAILGUN_API_KEY,
- domain: process.env.MAILGUN_DOMAIN,
-});
-
+//SendGrid API Key config
+sgMail.setAPIKey(process.env.SENDGRID_API_KEY);
 
 // Route to send email
 app.post('/send-email', async (req, res) => {
  const { to, subject, text } = req.body;
 
-
  const data = {
-   from: 'Dog Training CRM <mailgun@yourdomain.com>',
-   to,
+   from: 'Dog Training CRM <tonya.goodell@outlook.com>',
+   to, tonya.goodell@outlook.com
    subject,
    text,
  };
