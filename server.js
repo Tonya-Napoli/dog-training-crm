@@ -2,7 +2,7 @@ require('dotenv').config(); // For local development
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const mailgun = require('@sendgrid/mail');
+const sgMail = require('@sendgrid/mail');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,23 +17,21 @@ sgMail.setAPIKey(process.env.SENDGRID_API_KEY);
 app.post('/send-email', async (req, res) => {
  const { to, subject, text } = req.body;
 
- const data = {
+ const msg = {
    from: 'Dog Training CRM <tonya.goodell@outlook.com>',
-   to, tonya.goodell@outlook.com
+   to: 'tonya.goodell@outlook.com',
    subject,
    text,
  };
 
-
  try {
-   const response = await mg.messages().send(data);
+   const response = await sgMail.send(msg);
    res.status(200).json({ message: 'Email sent successfully', response });
  } catch (error) {
-   console.error(error);
+   console.error('Error sending email:', error);
    res.status(500).json({ error: 'Failed to send email' });
  }
 });
-
 
 app.listen(port, () => {
  console.log(`Server running on port ${port}`);
