@@ -1,6 +1,50 @@
-import React from "react";
-//import '@fontsource/pacifico'; // Defaults to regular weight
+import React, { useState } from "react";
+
 const GetStartedPage = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+
+  const [status, setStatus] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevent default form submission behavior
+    setStatus("Submitting...");
+
+    try {
+      const response = await fetch("http://localhost:3000/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: formData.email,
+          subject: "Free Consultation Request",
+          text: `Name: ${formData.name}\nPhone: ${formData.phone}\nMessage: ${formData.message}`,
+        }),
+      });
+
+      if (response.ok) {
+        setStatus("Request sent successfully!");
+        setFormData({ name: "", email: "", phone: "", message: "" }); // Reset form
+      } else {
+        const result = await response.json();
+        setStatus(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Error during form submission:", error);
+      setStatus("Failed to send request. Please try again.");
+    }
+  };
+
   return (
     <div className="bg-background text-heading min-h-screen flex flex-col items-center px-4 py-8">
       {/* Hero Section */}
@@ -9,19 +53,8 @@ const GetStartedPage = () => {
           Welcome to Puppy Pros Training
         </h1>
         <p className="text-lg sm:text-xl text-neutral max-w-2xl mx-auto">
-          Discover how we can help you and your furry friend excelerate your training!
+          Discover how we can help you and your furry friend accelerate your training!
         </p>
-      </section>
-
-      {/* What We Offer Section */}
-      <section className="mb-12 max-w-4xl">
-        <h2 className="text-2xl sm:text-3xl font-bold font-pacifico text-primary mb-6 text-center">
-          What We Offer
-        </h2>
-        <ul className="list-disc pl-5 space-y-2 text-neutral text-base sm:text-lg">
-          <li>In-home dog training sessions</li>
-          <li>Remote private training</li>
-        </ul>
       </section>
 
       {/* Contact Us Section */}
@@ -36,13 +69,16 @@ const GetStartedPage = () => {
         <h3 className="text-lg font-semibold text-brown text-heading mb-2">
           Request a Free Consultation
         </h3>
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-sm text-brown font-medium text-heading mb-1">
               Name
             </label>
             <input
               type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-primary focus:outline-none"
               placeholder="Enter your name"
               required
@@ -54,6 +90,9 @@ const GetStartedPage = () => {
             </label>
             <input
               type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-primary focus:outline-none"
               placeholder="Enter your email"
               required
@@ -65,6 +104,9 @@ const GetStartedPage = () => {
             </label>
             <input
               type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-primary focus:outline-none"
               placeholder="Enter your phone number"
               required
@@ -75,9 +117,13 @@ const GetStartedPage = () => {
               Message
             </label>
             <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-primary focus:outline-none"
               rows="4"
               placeholder="Write your message"
+              required
             />
           </div>
           <button
@@ -87,6 +133,7 @@ const GetStartedPage = () => {
             Submit
           </button>
         </form>
+        {status && <p className="mt-4 text-center">{status}</p>}
       </section>
     </div>
   );
