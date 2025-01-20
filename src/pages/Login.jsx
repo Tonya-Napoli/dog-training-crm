@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import users from '../mocks/UsersMock';
+import users from '../mocks/usersMock';
 
 const Login = () => {
   const { login } = useAuth();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import trainingData from '../mocks/TrainingDataMock';
+import trainingData from '../mocks/trainingDataMock';
 const DashboardClient = () => {
     const { user } = useAuth();
 
