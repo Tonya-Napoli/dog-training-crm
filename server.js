@@ -11,7 +11,7 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
 //SendGrid API Key config
-sgMail.setAPIKey(process.env.SENDGRID_API_KEY);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Route to send email
 app.post('/send-email', async (req, res) => {
