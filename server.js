@@ -20,7 +20,7 @@ app.post('/send-email', async (req, res) => {
 
  const msg = {
    from: 'Dog Training CRM <pupmail@puppyprostraining.com>',
-   to: 'pupmail@puppyprostraining.com',
+   to: 
    subject,
    text,
  };
