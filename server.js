@@ -31,7 +31,7 @@ app.post('/send-email', async (req, res) => {
    console.log('Sendgrid Response:', response);
    res.status(200).json({ message: 'Email sent successfully', response });
  } catch (error) {
-   console.error('Error sending email:', error.response?.body : error.message);
+   console.error('Error sending email:', error);
    res.status(500).json({ error: 'Failed to send email' });
  }
 });
