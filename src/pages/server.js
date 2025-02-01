@@ -1,4 +1,8 @@
-require('dotenv').config(); // For local development
+require('dotenv').config({ path: '.env.server' });
+require('dotenv').config();
+console.log('process.env.SERVER_PORT:', process.env.SERVER_PORT);
+console.log('process.env.PORT:', process.env.PORT);
+
 
 const express = require('express');
 const bodyParser = require('body-parser');
