@@ -2,41 +2,37 @@ require('dotenv').config(); // For local development
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const mailgun = require('mailgun-js');
-
+const sgMail = require('@sendgrid/mail');
 
 const app = express();
-const port = process.env.PORT || 5000;
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+const port = process.env.PORT || 3000; // Use the PORT from .env or default to 3000
 
 // Middleware
 app.use(bodyParser.json());
 
-// Mailgun configuration
-const mg = mailgun({
-  apiKey: process.env.MAILGUN_API_KEY,
-  domain: process.env.MAILGUN_DOMAIN,
-});
+// SendGrid API Key config
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+console.log('API Key:', process.env.SENDGRID_API_KEY);
 
 // Route to send email
 app.post('/send-email', async (req, res) => {
   const { to, subject, text } = req.body;
 
-  const data = {
-    from: 'Dog Training CRM <mailgun@yourdomain.com>',
-    to,
-    subject,
-    text,
+  // Ensure the email message object is correctly structured:
+  const msg = {
+    from: 'Dog Training CRM <pupmail@puppyprostraining.com>',
+    to: to,         // Use the recipient email from the request
+    subject: subject,
+    text: text,
   };
 
   try {
-    const response = await mg.messages().send(data);
+    console.log('Sending email to:', to);
+    const response = await sgMail.send(msg);
+    console.log('Sendgrid Response:', response);
     res.status(200).json({ message: 'Email sent successfully', response });
   } catch (error) {
-    console.error(error);
+    console.error('Error sending email:', error);
     res.status(500).json({ error: 'Failed to send email' });
   }
 });
