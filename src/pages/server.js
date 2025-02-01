@@ -6,12 +6,12 @@ const cors = require('cors');
 const sgMail = require('@sendgrid/mail');
 
 const app = express();
-const port = process.env.PORT || 5000; // Use the PORT from .env or default to 3000
+// Use SERVER_PORT from .env; if it's not set, default to 5000.
+const port = process.env.SERVER_PORT || 5000;
 
-//use cors middleware to allow cross-origin requests
+// Use CORS middleware to allow cross-origin requests
 app.use(cors());
 app.options('*', cors());
-
 
 // Middleware
 app.use(bodyParser.json());
@@ -23,11 +23,9 @@ console.log('API Key:', process.env.SENDGRID_API_KEY);
 // Route to send email
 app.post('/send-email', async (req, res) => {
   const { to, subject, text } = req.body;
-
-  // Ensure the email message object is correctly structured:
   const msg = {
     from: 'Dog Training CRM <pupmail@puppyprostraining.com>',
-    to: to,         // Use the recipient email from the request
+    to: to,
     subject: subject,
     text: text,
   };
@@ -35,7 +33,7 @@ app.post('/send-email', async (req, res) => {
   try {
     console.log('Sending email to:', to);
     const response = await sgMail.send(msg);
-    console.log('Sendgrid Response:', response);
+    console.log('SendGrid Response:', response);
     res.status(200).json({ message: 'Email sent successfully', response });
   } catch (error) {
     console.error('Error sending email:', error);
