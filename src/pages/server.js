@@ -2,10 +2,14 @@ require('dotenv').config(); // For local development
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const sgMail = require('@sendgrid/mail');
 
 const app = express();
-const port = process.env.PORT || 3000; // Use the PORT from .env or default to 3000
+const port = process.env.PORT || 5000; // Use the PORT from .env or default to 3000
+
+//use cors middleware to allow cross-origin requests
+app.use(cors());
 
 // Middleware
 app.use(bodyParser.json());
