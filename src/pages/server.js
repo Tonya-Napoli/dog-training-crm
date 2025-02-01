@@ -10,6 +10,8 @@ const port = process.env.PORT || 5000; // Use the PORT from .env or default to 3
 
 //use cors middleware to allow cross-origin requests
 app.use(cors());
+app.options('*', cors());
+
 
 // Middleware
 app.use(bodyParser.json());
