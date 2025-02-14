@@ -7,16 +7,12 @@ import cors from 'cors';
 import CompanyRoutes from './companyRoutes';
 import SendgridRoutes from './sendgridRoutes';
 import ClientRoutes from './clientRoutes';
-import MemberRoutes from './memberRoutes';
-import UserRoutes from './userRoutes';
-import ManagerRoutes from './managerRoutes';
-import CreditRoutes from './creditRoutes';
-import StripeRoutes from './stripeRoutes';
-import ReferralRoutes from './referralRoutes';
-import SupportTicketRoutes from './supportTicketRoutes';
-import SubscriberRoutes from './subscriberRoutes';
-import NotificationRoutes from './notificationRoutes';
-import MessengerRoutes from './messengerRoutes';
+//import MemberRoutes from './memberRoutes';
+//import UserRoutes from './userRoutes';
+//import ManagerRoutes from './managerRoutes';
+//import SubscriberRoutes from './subscriberRoutes';
+//import NotificationRoutes from './notificationRoutes';
+//import MessengerRoutes from './messengerRoutes';
 
 const app = express();
 
@@ -28,16 +24,16 @@ app.use(cors());
 app.use('/companies', CompanyRoutes);
 app.use('/mail', SendgridRoutes);
 app.use('/clients', ClientRoutes);
-app.use('/members', MemberRoutes);
-app.use('/users', UserRoutes);
-app.use('/managers', ManagerRoutes);
-app.use('/credit', CreditRoutes);
-app.use('/payment', StripeRoutes);
-app.use('/referral-accounts', ReferralRoutes);
-app.use('/tickets', SupportTicketRoutes);
-app.use('/subscribers', SubscriberRoutes);
-app.use('/notifications', NotificationRoutes);
-app.use('/messenger', MessengerRoutes);
+//app.use('/members', MemberRoutes);
+//app.use('/users', UserRoutes);
+//app.use('/managers', ManagerRoutes);
+//app.use('/credit', CreditRoutes);
+//app.use('/payment', StripeRoutes);
+//app.use('/referral-accounts', ReferralRoutes);
+//app.use('/tickets', SupportTicketRoutes);
+//app.use('/subscribers', SubscriberRoutes);
+//app.use('/notifications', NotificationRoutes);
+//app.use('/messenger', MessengerRoutes);
 
 // Optional: a default route for the API root
 app.get('/', (req, res) => {

@@ -1,12 +1,33 @@
 const { Router } = require('express');
 const { getAllClients } = require('../../data/users');
 const sgMail = require('@sendgrid/mail');
-const EMAILS = require('../../emailHTML');
 
-const router = Router();
+// Inline EMAILS constants for Puppy Pros Training
+const EMAILS = {
+  WELCOME_SUBJECT: "Welcome to Puppy Pros Training!",
+  INVITE_CLIENT_HTML: (name, formLink) =>
+    `Hello ${name},<br/><br/>Please register using the following link: <a href="${formLink}">${formLink}</a><br/><br/>Thank you!`,
+  TRANSFER: "Client Transfer Invitation",
+  TRANSFER_HTML: (name) =>
+    `Hello ${name},<br/><br/>You have been invited for a client transfer. Please contact your manager for details.`,
+  REFERRAL_ALERT_SUBJECT: "Referral Alert from Puppy Pros Training",
+  REFERRAL_ALERT: (name, email, phone, address, notes, referrer) =>
+    `Referral Alert:<br/><br/>Client Name: ${name}<br/>Email: ${email}<br/>Phone: ${phone}<br/>Address: ${address}<br/>Notes: ${notes}<br/>Referred by: ${referrer}`,
+  INVITE_PARTNER_HTML: (name, formLink) =>
+    `Hello ${name},<br/><br/>Please register as our partner using this link: <a href="${formLink}">${formLink}</a><br/><br/>Thank you!`,
+  INVITE_SUBSCRIBER_HTML: (name, formLink) =>
+    `Hello ${name},<br/><br/>Please register as a subscriber using this link: <a href="${formLink}">${formLink}</a><br/><br/>Thank you!`,
+  SCHEDULE_FOLLOWUP: "Schedule Your Follow-Up",
+  SCHEDULE_FOLLOWUP_HTML: (name) =>
+    `Hello ${name},<br/><br/>Please schedule your follow-up appointment at your earliest convenience.`,
+  EXISTING_REFERRAL_ALERT: (name, email, phone, address, notes, clientId, referrer) =>
+    `Referral Alert (Existing Client):<br/><br/>Client Name: ${name}<br/>Email: ${email}<br/>Phone: ${phone}<br/>Address: ${address}<br/>Notes: ${notes}<br/>Client ID: ${clientId}<br/>Referred by: ${referrer}`
+};
 
 // Set SendGrid API key
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
+
+const router = Router();
 
 // Template generators rebranded for Puppy Pros Training
 const generateInviteTemplate = (body) => (
@@ -389,6 +410,8 @@ router.post('/ready', async (req, res) => {
 });
 
 module.exports = router;
+
+
 
 
 
