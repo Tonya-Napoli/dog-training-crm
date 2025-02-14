@@ -1,7 +1,7 @@
-import { Router, Request, Response } from 'express';
-import { getAllClients } from '../../data/users';
-import sgMail from '@sendgrid/mail';
-import * as EMAILS from '../../emailHTML';
+const { Router } = require('express');
+const { getAllClients } = require('../../data/users');
+const sgMail = require('@sendgrid/mail');
+const EMAILS = require('../../emailHTML');
 
 const router = Router();
 
@@ -9,7 +9,7 @@ const router = Router();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
 
 // Template generators rebranded for Puppy Pros Training
-const generateInviteTemplate = (body: string) => (
+const generateInviteTemplate = (body) => (
   `
   <!DOCTYPE html>
   <html>
@@ -37,7 +37,7 @@ const generateInviteTemplate = (body: string) => (
   `
 );
 
-const generateReferTemplate = (body: string) => (
+const generateReferTemplate = (body) => (
   `
   <!DOCTYPE html>
   <html>
@@ -66,13 +66,13 @@ const generateReferTemplate = (body: string) => (
 );
 
 // Invite a single client
-router.post('/invite-client', async (req: Request, res: Response) => {
+router.post('/invite-client', async (req, res) => {
   try {
     const { name, email, formLink } = req.body;
     const clientsResult = await getAllClients();
 
-    const clientExists = clientsResult?.Items
-      ? clientsResult.Items.filter((client: Record<any, any>) =>
+    const clientExists = clientsResult && clientsResult.Items
+      ? clientsResult.Items.filter(client =>
           client.userInfo.email.toLowerCase() === email.toLowerCase()
         ).length >= 1
       : false;
@@ -96,14 +96,14 @@ router.post('/invite-client', async (req: Request, res: Response) => {
 });
 
 // Bulk invite clients
-router.post('/bulk-invite-client', async (req: Request, res: Response) => {
+router.post('/bulk-invite-client', async (req, res) => {
   try {
     const invites = req.body;
     const clientsResult = await getAllClients();
 
-    const invitePromises = invites.map((invite: { name: string; email: string; formLink: string }) => {
-      const clientExists = clientsResult?.Items
-        ? clientsResult.Items.filter((client: Record<any, any>) =>
+    const invitePromises = invites.map(invite => {
+      const clientExists = clientsResult && clientsResult.Items
+        ? clientsResult.Items.filter(client =>
             client.userInfo.email.toLowerCase() === invite.email.toLowerCase()
           ).length >= 1
         : false;
@@ -121,7 +121,7 @@ router.post('/bulk-invite-client', async (req: Request, res: Response) => {
 
       return sgMail.send(msg)
         .then(() => ({ success: true, email: invite.email }))
-        .catch((error) => ({ success: false, email: invite.email, error: error.message }));
+        .catch(error => ({ success: false, email: invite.email, error: error.message }));
     });
 
     const results = await Promise.allSettled(invitePromises);
@@ -132,13 +132,13 @@ router.post('/bulk-invite-client', async (req: Request, res: Response) => {
     }));
 
     res.status(200).json({ report });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Refer a client (new client referral)
-router.post('/refer-client', async (req: Request, res: Response) => {
+router.post('/refer-client', async (req, res) => {
   try {
     const { name, email, phone, address, notes, referrer } = req.body;
     
@@ -170,7 +170,7 @@ router.post('/refer-client', async (req: Request, res: Response) => {
 });
 
 // Refer an existing client
-router.post('/refer-existing-client', async (req: Request, res: Response) => {
+router.post('/refer-existing-client', async (req, res) => {
   try {
     const { client, notes, referrer } = req.body;
     const { name, phone, address, email } = client.userInfo;
@@ -192,7 +192,7 @@ router.post('/refer-existing-client', async (req: Request, res: Response) => {
 });
 
 // Follow-up email
-router.post('/followup', async (req: Request, res: Response) => {
+router.post('/followup', async (req, res) => {
   try {
     const { name, email } = req.body;
     
@@ -212,7 +212,7 @@ router.post('/followup', async (req: Request, res: Response) => {
 });
 
 // Invite a member
-router.post('/invite-member', async (req: Request, res: Response) => {
+router.post('/invite-member', async (req, res) => {
   try {
     const { name, email, formLink } = req.body;
     
@@ -231,11 +231,11 @@ router.post('/invite-member', async (req: Request, res: Response) => {
 });
 
 // Bulk invite members
-router.post('/bulk-invite-member', async (req: Request, res: Response) => {
+router.post('/bulk-invite-member', async (req, res) => {
   try {
     const invites = req.body;
 
-    const invitePromises = invites.map((invite: { name: string; email: string; formLink: string }) => {        
+    const invitePromises = invites.map(invite => {        
       const msg = {
         to: invite.email,
         from: 'pupmail@puppyprostraining.com',
@@ -245,7 +245,7 @@ router.post('/bulk-invite-member', async (req: Request, res: Response) => {
       
       return sgMail.send(msg)
         .then(() => ({ success: true, email: invite.email }))
-        .catch((error) => ({ success: false, email: invite.email, error: error.message }));
+        .catch(error => ({ success: false, email: invite.email, error: error.message }));
     });
 
     const results = await Promise.allSettled(invitePromises);
@@ -256,13 +256,13 @@ router.post('/bulk-invite-member', async (req: Request, res: Response) => {
     }));
 
     res.status(200).json({ report });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Invite a company
-router.post('/invite-company', async (req: Request, res: Response) => {
+router.post('/invite-company', async (req, res) => {
   try {
     const { name, email, formLink } = req.body;
     
@@ -281,7 +281,7 @@ router.post('/invite-company', async (req: Request, res: Response) => {
 });
 
 // Invite a partner
-router.post('/invite-partner', async (req: Request, res: Response) => {
+router.post('/invite-partner', async (req, res) => {
   try {
     const { name, email, formLink } = req.body;
     
@@ -300,7 +300,7 @@ router.post('/invite-partner', async (req: Request, res: Response) => {
 });
 
 // Credit application invite
-router.post('/credit/application', async (req: Request, res: Response) => {
+router.post('/credit/application', async (req, res) => {
   try {
     const { name, email, formLink } = req.body;
 
@@ -330,7 +330,7 @@ router.post('/credit/application', async (req: Request, res: Response) => {
 });
 
 // Manager invite
-router.post('/managers/0', async (req: Request, res: Response) => {
+router.post('/managers/0', async (req, res) => {
   try {
     const { name, email, formLink } = req.body;
 
@@ -354,13 +354,13 @@ router.post('/managers/0', async (req: Request, res: Response) => {
 
     const result = await sgMail.send(msg);
     res.status(202).json({ result });
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({ error });
   }
 });
 
 // Credit application ready notification
-router.post('/ready', async (req: Request, res: Response) => {
+router.post('/ready', async (req, res) => {
   try {
     const { name, email } = req.body;
     
@@ -388,7 +388,8 @@ router.post('/ready', async (req: Request, res: Response) => {
   }
 });
 
-// (Optional) Additional routes can be added here.
+module.exports = router;
 
-export default router;
+
+
 
