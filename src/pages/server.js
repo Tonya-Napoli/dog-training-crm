@@ -1,5 +1,5 @@
-require('dotenv').config({ path: '.env.server' });
-require('dotenv').config();
+console.log('Server.js is starting...')
+require('dotenv').config({ path: '../../.env.server' });
 console.log('process.env.SERVER_PORT:', process.env.SERVER_PORT);
 console.log('process.env.PORT:', process.env.PORT);
 
