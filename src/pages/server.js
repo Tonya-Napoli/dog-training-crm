@@ -2,15 +2,13 @@ console.log('Server.js is starting...')
 require('dotenv').config({ path: '../../.env' });
 console.log('process.env.PORT:', process.env.PORT);
 
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const sgMail = require('@sendgrid/mail');
 
 const app = express();
-// Use SERVER_PORT from .env; if it's not set, default to 5000.
-const port = process.env.SERVER_PORT || 5000;
+const port = process.env.PORT || 3000;
 
 // Use CORS middleware to allow cross-origin requests
 app.use(cors());
