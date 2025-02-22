@@ -1,6 +1,8 @@
 console.log('Server.js is starting...')
-require('dotenv').config({ path: '../../.env' });
-console.log('process.env.PORT:', process.env.PORT);
+//require('dotenv').config({ path: '../../.env' });
+require('dotenv').config();
+console.log('Loaded SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? 'API Key Present' : 'Missing API Key');
+
 
 const express = require('express');
 const bodyParser = require('body-parser');
