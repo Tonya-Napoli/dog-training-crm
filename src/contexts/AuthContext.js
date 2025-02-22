@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
-import usersMock from '../mocks/usersMock';
+import usersMock from '../mocks/UsersMock';
 
 // Create a context for authentication and role management
 const AuthContext = createContext();
