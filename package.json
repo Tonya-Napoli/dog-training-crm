@@ -1,5 +1,6 @@
 {
   "name": "dog-training-crm",
+  "type": "module",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -34,7 +35,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "server": "cross-env SERVER_PORT=5000 nodemon server.js",
+    "server": "cross-env SERVER_PORT=4000 nodemon server.js",
     "dev": "concurrently \"npm run client\" \"npm run server\""
   },
   "eslintConfig": {
