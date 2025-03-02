@@ -1,19 +1,19 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Home from './pages/Home';
-import DashboardTrainer from './pages/DashboardTrainer';
-import DashboardClient from './pages/DashboardClient';
-import DashboardAdmin from './pages/DashboardAdmin';
-import ClientList from './pages/ClientList';
-import AddClient from './pages/ClientAdd';
-import ClientProfile from './components/ClientProfile';
-import Schedule from './components/Schedule';
-import Billing from './components/Billing';
-import Login from './pages/Login';
-import PrivateRoute from './pages/PrivateRoute';
-import ForgotPassword from './components/ForgotPassword';
-import Header from './components/Layout/Header';
-import GetStarted from './pages/GetStarted';
+import Home from './pages/Home.jsx';
+import DashboardTrainer from './pages/DashboardTrainer.jsx';
+import DashboardClient from './pages/DashboardClient.jsx';
+import DashboardAdmin from './pages/DashboardAdmin.jsx';
+import ClientList from './pages/ClientList.jsx';
+import AddClient from './pages/ClientAdd.jsx';
+import ClientProfile from './components/ClientProfile.jsx';
+import Schedule from './components/Schedule.jsx';
+import Billing from './components/Billing.jsx';
+import Login from './pages/Login.jsx';
+import PrivateRoute from './pages/PrivateRoute.js';
+import ForgotPassword from './components/ForgotPassword.jsx';
+import Header from './components/Layout/Header.jsx';
+import GetStarted from './pages/GetStarted.jsx';
 
 function App() {
   return (

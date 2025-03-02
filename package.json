@@ -15,7 +15,6 @@
     "echarts": "^5.6.0",
     "express": "^4.21.2",
     "formik": "^2.4.6",
-    "mailgun-js": "^0.22.0",
     "node": "^23.4.0",
     "nodemailer": "^6.9.16",
     "nodemailer-sendgrid-transport": "^0.2.0",
