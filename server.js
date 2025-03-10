@@ -3,6 +3,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import sgMail from '@sendgrid/mail';
+import { error } from 'console';
 
 console.log("Running updated server.js with ES modules");
 
@@ -17,6 +18,12 @@ const port = process.env.PORT || 4000;
 app.use(cors());
 app.options('*', cors());
 app.use(bodyParser.json());
+
+//Handle JSON Parsing errors
+app.use((err, req, res, next) => {
+  console.error('Invalid JSON:', err);
+  res.status(400).json({ error: 'Invalid JSON' });
+})
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
