@@ -39,10 +39,10 @@ app.post('/send-email', async (req, res) => {
   try {
     console.log('Sending email to:', to);
     const response = await sgMail.send(msg);
-    console.log('SendGrid Response:', response);
+    console.log('SendGrid Response:', response[0].statusCode, response[0]?.headers);
     res.status(200).json({ message: 'Email sent successfully', response });
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Error sending email:', error.response?.body || error);
     res.status(500).json({ error: 'Failed to send email' });
   }
 });
