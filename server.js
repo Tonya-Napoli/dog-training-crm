@@ -6,6 +6,11 @@ import sgMail from '@sendgrid/mail';
 
 console.log("Running updated server.js with ES modules");
 
+if (!process.env.SENDGRID_API_KEY) {
+  console.error('SENDGRID_API_KEY is missing Check your .env file.');
+  process.exit(1);
+}
+
 const app = express();
 const port = process.env.PORT || 4000;
 
@@ -18,7 +23,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 app.post('/send-email', async (req, res) => {
   const { to, subject, text } = req.body;
   const msg = {
-    from: 'Dog Training CRM <pupmail@puppyprostraining.com>',//verified sender
+    from: 'pupmail@puppyprostraining.com',//verified sender
     to: to,
     subject: subject,
     text: text,
