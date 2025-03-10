@@ -18,7 +18,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 app.post('/send-email', async (req, res) => {
   const { to, subject, text } = req.body;
   const msg = {
-    from: 'Dog Training CRM <pupmail@puppyprostraining.com>',
+    from: 'Dog Training CRM <pupmail@puppyprostraining.com>',//verified sender
     to: to,
     subject: subject,
     text: text,
