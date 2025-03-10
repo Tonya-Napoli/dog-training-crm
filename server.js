@@ -3,7 +3,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import sgMail from '@sendgrid/mail';
-import { error } from 'console';
+//import { error } from 'console';
 
 console.log("Running updated server.js with ES modules");
 
