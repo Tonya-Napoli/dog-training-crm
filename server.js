@@ -1,7 +1,8 @@
+// src/server.js
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import sgMail from '@sendgrid/mail';
+import emailRoutes from './src/api/routes/emailRoutes.js'; 
 
 // Check for SendGrid API key
 if (!process.env.SENDGRID_API_KEY) {
@@ -25,44 +26,8 @@ app.use((err, req, res, next) => {
   next();
 });
 
-// Set SendGrid API key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-// Handle contact form submissions
-app.post('/send-email', async (req, res) => {
-  try {
-    const { name, email, phone, message } = req.body;
-    
-    if (!name || !email || !message) {
-      return res.status(400).json({ error: 'Name, email, and message are required' });
-    }
-
-    const msg = {
-      to: 'info@puppyprostraining.com', // Replace with your recipient email
-      from: 'pupmail@puppyprostraining.com', // Your verified sender
-      subject: `New Inquiry from ${name}`,
-      html: `
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message}</p>
-      `,
-    };
-
-    console.log('Sending email with payload:', JSON.stringify(msg, null, 2));
-    const response = await sgMail.send(msg);
-    console.log('SendGrid Response:', response[0].statusCode, response[0]?.headers);
-    
-    res.status(200).json({ message: 'Email sent successfully' });
-  } catch (error) {
-    console.error('Error sending email:', error.response?.body || error);
-    res.status(500).json({ 
-      error: 'Failed to send email',
-      details: error.response?.body?.errors || error.message 
-    });
-  }
-});
+// Routes
+app.use('/api', emailRoutes);
 
 // Default route
 app.get('/', (req, res) => {
