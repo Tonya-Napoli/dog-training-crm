@@ -25,11 +25,7 @@ const GetStartedPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          to: formData.email,
-          subject: "Free Consultation Request",
-          text: `Name: ${formData.name}\nPhone: ${formData.phone}\nMessage: ${formData.message}`,
-        }),
+        body: JSON.stringify(formData), // Send the entire form data object
       });
 
       if (response.ok) {
@@ -37,7 +33,7 @@ const GetStartedPage = () => {
         setFormData({ name: "", email: "", phone: "", message: "" }); // Reset form
       } else {
         const result = await response.json();
-        setStatus(`Error: ${result.error}`);
+        setStatus(`Error: ${result.error || 'Failed to send'}`);
       }
     } catch (error) {
       console.error("Error during form submission:", error);
