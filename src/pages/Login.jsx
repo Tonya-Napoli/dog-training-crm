@@ -1,105 +1,75 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+// import users from '../mocks/UsersMock'; // Comment this out for now
 
-// Common dashboard component with role-specific rendering
-const Dashboard = () => {
-  const { user, logout } = useAuth();
+const Login = () => {
+  console.log("Login component rendering");  // Add this line
+  
+  const { login } = useAuth();
+  console.log("Auth context received:", { login });  // Add this line
+  
+  const navigate = useNavigate();
+  // State for email, password, and error
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  // If not authenticated, redirect to login
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-
-  // Role-specific content
-  const renderRoleContent = () => {
-    switch (user.role) {
-      case 'admin':
-        return (
-          <div className="bg-blue-50 p-4 rounded-lg mb-4">
-            <h3 className="text-xl font-semibold text-blue-900 mb-2">Admin Controls</h3>
-            <p className="text-blue-800">Here you can manage all users and system settings.</p>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <button className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
-                Manage Users
-              </button>
-              <button className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
-                System Settings
-              </button>
-            </div>
-          </div>
-        );
-        
-      case 'trainer':
-        return (
-          <div className="bg-green-50 p-4 rounded-lg mb-4">
-            <h3 className="text-xl font-semibold text-green-900 mb-2">Trainer Tools</h3>
-            <p className="text-green-800">Manage your clients and their training programs.</p>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <button className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                Client List
-              </button>
-              <button className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                Create Program
-              </button>
-            </div>
-          </div>
-        );
-        
-      case 'client':
-      default:
-        return (
-          <div className="bg-purple-50 p-4 rounded-lg mb-4">
-            <h3 className="text-xl font-semibold text-purple-900 mb-2">Client Dashboard</h3>
-            <p className="text-purple-800">View your training programs and track your progress.</p>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <button className="bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700">
-                My Programs
-              </button>
-              <button className="bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700">
-                Track Progress
-              </button>
-            </div>
-          </div>
-        );
+  const handleLogin = (e) => {
+    e.preventDefault();
+    console.log('Attempting login with:', email, password);
+    
+    // Temporarily simplify the login logic
+    try {
+      login({ email, role: 'client', username: 'Test User' }); // Just pass a simple object for now
+      navigate('/client-dashboard');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Error during login');
     }
   };
 
+  // Render the UI without any conditional logic that might cause blank page
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-heading">
-          Welcome, {user.username}!
-        </h2>
-        <button
-          onClick={logout}
-          className="bg-red text-white px-4 py-2 rounded hover:bg-red-dark"
-        >
-          Logout
-        </button>
-      </div>
-      
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <div className="mb-4">
-          <span className="inline-block bg-primary text-white px-3 py-1 rounded-full text-sm font-semibold">
-            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-          </span>
-        </div>
-        
-        {renderRoleContent()}
-        
-        <div className="border-t pt-4 mt-4">
-          <h3 className="text-lg font-semibold mb-2">Your Account</h3>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Member since:</strong> {new Date(user.created).toLocaleDateString()}</p>
-        </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+      <h2 className="text-3xl font-bold text-red text-heading mb-6">Login</h2>
+      <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96">
+        <form onSubmit={handleLogin}>
+          <div className="mb-4">
+            <label htmlFor="email" className="block text-heading text-sm font-bold mb-2">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-heading"
+            />
+          </div>
+          <div className="mb-6">
+            <label htmlFor="password" className="block text-heading text-sm font-bold mb-2">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-heading"
+            />
+          </div>
+          {error && <p className="text-danger text-xs italic mb-4">{error}</p>}
+          <button type="submit" className="bg-primary text-white font-bold py-2 px-4 rounded">
+            Login
+          </button>
+        </form>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
-
+export default Login;
 
 
 
