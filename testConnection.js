@@ -1,7 +1,21 @@
 // testConnection.js
 import 'dotenv/config';
-import connectDB from './src/db/connection.js';
 import mongoose from 'mongoose';
+
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    return conn;
+  } catch (error) {
+    console.error(`Error connecting to MongoDB: ${error.message}`);
+    process.exit(1);
+  }
+};
 
 // Test function
 const testConnection = async () => {
@@ -29,8 +43,10 @@ const testConnection = async () => {
     console.error('Error testing connection:', error);
   } finally {
     // Close the connection
-    await mongoose.connection.close();
-    console.log('Connection closed');
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+      console.log('Connection closed');
+    }
   }
 };
 
