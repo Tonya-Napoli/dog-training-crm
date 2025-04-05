@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
         
         try {
           // Verify token and get user data
-          const res = await axios.get('http://localhost:5000/api/auth/user');
+          const res = await axios.get('http://localhost:4000/api/auth/user');
           setUser(res.data);
         } catch (err) {
           console.error('Token validation error:', err);
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', {
+      const res = await axios.post('http://localhost:4000/api/auth/login', {
         email,
         password
       });
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', userData);
+      const res = await axios.post('http://localhost:4000/api/auth/register', userData);
       
       // Store token in localStorage
       localStorage.setItem('token', res.data.token);

@@ -1,8 +1,9 @@
-// src/server.js
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import emailRoutes from './src/api/routes/emailRoutes.js'; 
+import mongoose from 'mongoose';
+import emailRoutes from './src/api/routes/emailRoutes.js';
+import authRoutes from './src/api/routes/authRoutes.js';
 
 // Check for SendGrid API key
 if (!process.env.SENDGRID_API_KEY) {
@@ -10,8 +11,14 @@ if (!process.env.SENDGRID_API_KEY) {
   process.exit(1);
 }
 
+// Initialize Express
 const app = express();
 const port = process.env.PORT || 4000;
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
 // Middleware
 app.use(cors());
@@ -28,6 +35,7 @@ app.use((err, req, res, next) => {
 
 // Routes
 app.use('/api', emailRoutes);
+app.use('/api/auth', authRoutes);
 
 // Default route
 app.get('/', (req, res) => {
@@ -38,4 +46,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-
