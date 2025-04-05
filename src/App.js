@@ -9,7 +9,7 @@ import AddClient from './pages/ClientAdd.jsx';
 import ClientProfile from './components/ClientProfile.jsx';
 import Schedule from './components/Schedule.jsx';
 import Billing from './components/Billing.jsx';
-import Login from './pages/Login.jsx';
+import TestLogin from './pages/TestLogin.jsx';
 import PrivateRoute from './pages/PrivateRoute.js';
 import ForgotPassword from './components/ForgotPassword.jsx';
 import Header from './components/Layout/Header.jsx';
@@ -21,7 +21,7 @@ function App() {
       <Header />
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<TestLogin />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/" element={<Home />} />
         <Route path="/get-started" element={<GetStarted />} />
