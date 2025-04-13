@@ -1,17 +1,19 @@
+// src/api/models/userModel.js
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const UserSchema = new mongoose.Schema({
-  username: {
+const userSchema = new mongoose.Schema({
+  name: {
     type: String,
     required: true,
-    unique: true
+    trim: true
   },
   email: {
     type: String,
     required: true,
     unique: true,
-    match: [/.+\@.+\..+/, 'Please enter a valid email']
+    trim: true,
+    lowercase: true
   },
   password: {
     type: String,
@@ -19,17 +21,45 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'trainer', 'client'],
+    enum: ['client', 'trainer', 'admin'],
     default: 'client'
   },
+  phone: {
+    type: String,
+    trim: true
+  },
+  address: {
+    street: String,
+    city: String,
+    state: String,
+    zipCode: String
+  },
+  profileImage: String,
+  dogs: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Dog'
+  }],
+  // Fields specific to trainers
+  certifications: [String],
+  specialties: [String],
+  // For clients: their assigned trainer
+  trainer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  // For trainers: their clients
+  clients: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   created: {
     type: Date,
     default: Date.now
   }
-});
+}, { timestamps: true });
 
 // Hash password before saving
-UserSchema.pre('save', async function(next) {
+userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
   try {
@@ -41,4 +71,11 @@ UserSchema.pre('save', async function(next) {
   }
 });
 
-export default mongoose.model('User', UserSchema);
+// Method to compare passwords
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+const User = mongoose.model('User', userSchema);
+
+export default User;
