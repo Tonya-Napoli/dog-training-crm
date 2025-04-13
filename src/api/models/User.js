@@ -3,7 +3,12 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
-  name: {
+  firstName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  lastName: {
     type: String,
     required: true,
     trim: true
@@ -34,12 +39,17 @@ const userSchema = new mongoose.Schema({
     state: String,
     zipCode: String
   },
+  emergencyContact: {
+    name: String,
+    relationship: String,
+    phone: String
+  },
   profileImage: String,
   dogs: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Dog'
   }],
-  // Fields specific to trainers
+  // Fields specific to trainers (we'll keep these for later)
   certifications: [String],
   specialties: [String],
   // For clients: their assigned trainer
@@ -52,6 +62,11 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  agreesToTerms: {
+    type: Boolean,
+    required: true,
+    default: false
+  },
   created: {
     type: Date,
     default: Date.now
