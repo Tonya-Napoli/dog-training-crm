@@ -1,6 +1,6 @@
 import express from 'express';
 import sgMail from '@sendgrid/mail';
-import Contact from '../src/api/models/Contact.js'; 
+import Contact from '../models/Contact.js'; 
 
 const router = express.Router();
 
