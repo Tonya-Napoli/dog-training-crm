@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from '../axios';
+import axios from '../axios.js';
 import { debounce } from 'lodash';
 
 const DashboardAdmin = () => {

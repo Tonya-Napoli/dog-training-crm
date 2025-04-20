@@ -1,12 +1,13 @@
 import express from 'express';
 import sgMail from '@sendgrid/mail';
-import Contact from '../models/Contact.js'; 
+import Contact from '../models/Contact.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Submit contact form
+// Submit contact form (public)
 router.post('/send-email', async (req, res) => {
   try {
     const { name, email, phone, message } = req.body;
@@ -30,7 +31,7 @@ router.post('/send-email', async (req, res) => {
       subject: `New Inquiry from ${name}`,
       html: `
         <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p> <!-- Fixed: Uses email -->
+        <p><strong>Email:</strong> ${email}</p>
         <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
         <p><strong>Message:</strong></p>
         <p>${message}</p>
@@ -48,19 +49,39 @@ router.post('/send-email', async (req, res) => {
   }
 });
 
-// Get all contacts
-router.get('/contacts', async (req, res) => {
+// Get all contacts (protected, admin-only)
+router.get('/contacts', auth, async (req, res) => {
   try {
-    const contacts = await Contact.find().sort({ createdAt: -1 });
-    res.status(200).json(contacts);
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.perPage) || 10;
+    const skip = (page - 1) * perPage;
+    const { status, search } = req.query;
+
+    let query = {};
+    if (status) {
+      query.status = status;
+    }
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const contacts = await Contact.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(perPage);
+    const total = await Contact.countDocuments(query);
+    res.status(200).json({ contacts, total, page, perPage });
   } catch (error) {
     console.error('Error fetching contacts:', error);
     res.status(500).json({ error: 'Failed to fetch contacts' });
   }
 });
 
-// Update contact status
-router.put('/contacts/:id/status', async (req, res) => {
+// Update contact status (protected, admin-only)
+router.put('/contacts/:id/status', auth, async (req, res) => {
   try {
     const { status } = req.body;
     if (!['New', 'Contacted', 'Scheduled', 'Closed'].includes(status)) {
@@ -81,8 +102,8 @@ router.put('/contacts/:id/status', async (req, res) => {
   }
 });
 
-// Update follow-up notes
-router.put('/contacts/:id/notes', async (req, res) => {
+// Update follow-up notes (protected, admin-only)
+router.put('/contacts/:id/notes', auth, async (req, res) => {
   try {
     const { followUpNotes } = req.body;
     const contact = await Contact.findByIdAndUpdate(
@@ -100,7 +121,7 @@ router.put('/contacts/:id/notes', async (req, res) => {
   }
 });
 
-// Test route
+// Test route (public)
 router.get('/test', (req, res) => {
   res.status(200).json({
     message: 'Email API is working',

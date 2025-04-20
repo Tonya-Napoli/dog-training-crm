@@ -13,6 +13,11 @@ export default function auth(req, res, next) {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
+    // Check if user is admin
+    if (decoded.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    
     // Set user data from token to request object
     req.user = decoded.user;
     next();
