@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const AdminRegistrationForm = () => {
+const AdminForm = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -8,30 +8,56 @@ const AdminRegistrationForm = () => {
     password: '',
     confirmPassword: '',
     role: 'admin',
+    department: '', // This was likely undefined
     accessLevel: 'full',
-    isActive: true,
-    dateJoined: new Date().toISOString().split('T')[0]
+    isActive: true
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  // For debugging - add this to see form data in real-time
+  const [debugMode, setDebugMode] = useState(false);
+
+  const departmentOptions = [
+    'IT',
+    'Operations',
+    'Management',
+    'Finance',
+    'Human Resources'
+  ];
+
+  const accessLevelOptions = [
+    { value: 'full', label: 'Full Access' },
+    { value: 'limited', label: 'Limited Access' },
+    { value: 'readonly', label: 'Read Only' }
+  ];
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
   const validateForm = () => {
     let tempErrors = {};
     let isValid = true;
 
-    if (!formData.firstName.trim()) {
+    // Safely check string fields with optional chaining
+    if (!formData.firstName?.trim()) {
       tempErrors.firstName = "First name is required";
       isValid = false;
     }
 
-    if (!formData.lastName.trim()) {
+    if (!formData.lastName?.trim()) {
       tempErrors.lastName = "Last name is required";
       isValid = false;
     }
 
-    if (!formData.email.trim()) {
+    if (!formData.email?.trim()) {
       tempErrors.email = "Email is required";
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -52,7 +78,8 @@ const AdminRegistrationForm = () => {
       isValid = false;
     }
 
-    if (!formData.department.trim()) {
+    // Safely check department with optional chaining
+    if (!formData.department?.trim()) {
       tempErrors.department = "Department is required";
       isValid = false;
     }
@@ -61,32 +88,29 @@ const AdminRegistrationForm = () => {
     return isValid;
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
       setIsSubmitting(true);
       
+      // For testing - store in localStorage instead of sending to API
       try {
-        // need actual API endpoint
-        const response = await fetch('/api/admin/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
-
-        if (response.ok) {
+        console.log("Form data to be submitted:", formData);
+        
+        // Simulate API call
+        setTimeout(() => {
+          // Store in localStorage for demo purposes
+          const existingData = JSON.parse(localStorage.getItem('adminSubmissions') || '[]');
+          existingData.push({
+            ...formData,
+            submittedAt: new Date().toISOString()
+          });
+          localStorage.setItem('adminSubmissions', JSON.stringify(existingData));
+          
+          console.log("Data saved to localStorage");
           setSubmitSuccess(true);
+          
           // Reset form after successful submission
           setFormData({
             firstName: '',
@@ -95,15 +119,13 @@ const AdminRegistrationForm = () => {
             password: '',
             confirmPassword: '',
             role: 'admin',
+            department: '',
             accessLevel: 'full',
-            isActive: true,
-            dateJoined: new Date().toISOString().split('T')[0]
+            isActive: true
           });
-        } else {
-          const errorData = await response.json();
-          setErrors({ submit: errorData.message || 'Failed to create admin account' });
-        }
+        }, 1000);
       } catch (error) {
+        console.error("Error:", error);
         setErrors({ submit: 'Something went wrong. Please try again.' });
       } finally {
         setIsSubmitting(false);
@@ -114,6 +136,17 @@ const AdminRegistrationForm = () => {
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-6 text-center">Admin Registration</h2>
+      
+      {/* Toggle Debug Button */}
+      <div className="text-right mb-4">
+        <button 
+          type="button"
+          onClick={() => setDebugMode(!debugMode)}
+          className="text-xs text-gray-500 underline"
+        >
+          {debugMode ? 'Hide Debug Info' : 'Show Debug Info'}
+        </button>
+      </div>
       
       {submitSuccess && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
@@ -206,6 +239,25 @@ const AdminRegistrationForm = () => {
         </div>
         
         <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="department">
+            Department*
+          </label>
+          <select
+            id="department"
+            name="department"
+            value={formData.department}
+            onChange={handleChange}
+            className={`w-full px-3 py-2 border rounded-lg ${errors.department ? 'border-red-500' : 'border-gray-300'}`}
+          >
+            <option value="">Select Department</option>
+            {departmentOptions.map((dept) => (
+              <option key={dept} value={dept}>{dept}</option>
+            ))}
+          </select>
+          {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department}</p>}
+        </div>
+        
+        <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="accessLevel">
             Access Level
           </label>
@@ -216,9 +268,9 @@ const AdminRegistrationForm = () => {
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg"
           >
-            <option value="full">Full Access</option>
-            <option value="limited">Limited Access</option>
-            <option value="readonly">Read Only</option>
+            {accessLevelOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
           </select>
         </div>
         
@@ -245,8 +297,18 @@ const AdminRegistrationForm = () => {
           </button>
         </div>
       </form>
+      
+      {/* Debug information display */}
+      {debugMode && (
+        <div className="mt-8 p-4 border rounded bg-gray-50">
+          <h3 className="text-lg font-semibold mb-2">Current Form Data (Debug):</h3>
+          <pre className="text-xs overflow-auto max-h-96">
+            {JSON.stringify(formData, null, 2)}
+          </pre>
+        </div>
+      )}
     </div>
   );
 };
 
-export default AdminRegistrationForm;
+export default AdminForm;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const DogTrainerRegistrationForm = () => {
+const TrainerForm = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -632,4 +632,4 @@ const DogTrainerRegistrationForm = () => {
   );
 };
 
-export default DogTrainerRegistrationForm;
+export default TrainerForm;

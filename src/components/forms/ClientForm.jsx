@@ -24,6 +24,7 @@ const ClientForm = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
 
   const trainingGoalOptions = [
     { value: 'basicObedience', label: 'Basic Obedience (Sit, Stay, Come)' },
@@ -83,18 +84,18 @@ const ClientForm = () => {
     let tempErrors = {};
     let isValid = true;
 
-    // Validate client information
-    if (!formData.firstName.trim()) {
+    // Validate client information with optional chaining
+    if (!formData.firstName?.trim()) {
       tempErrors.firstName = "First name is required";
       isValid = false;
     }
 
-    if (!formData.lastName.trim()) {
+    if (!formData.lastName?.trim()) {
       tempErrors.lastName = "Last name is required";
       isValid = false;
     }
 
-    if (!formData.email.trim()) {
+    if (!formData.email?.trim()) {
       tempErrors.email = "Email is required";
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -102,50 +103,50 @@ const ClientForm = () => {
       isValid = false;
     }
 
-    if (!formData.phone.trim()) {
+    if (!formData.phone?.trim()) {
       tempErrors.phone = "Phone number is required";
       isValid = false;
     }
 
-    // Validate address
-    if (!formData.address.street.trim()) {
+    // Validate address safely
+    if (!formData.address?.street?.trim()) {
       tempErrors["address.street"] = "Street address is required";
       isValid = false;
     }
 
-    if (!formData.address.city.trim()) {
+    if (!formData.address?.city?.trim()) {
       tempErrors["address.city"] = "City is required";
       isValid = false;
     }
 
-    if (!formData.address.state.trim()) {
+    if (!formData.address?.state?.trim()) {
       tempErrors["address.state"] = "State is required";
       isValid = false;
     }
 
-    if (!formData.address.zipCode.trim()) {
+    if (!formData.address?.zipCode?.trim()) {
       tempErrors["address.zipCode"] = "Zip code is required";
       isValid = false;
     }
 
     // Validate dog information
-    if (!formData.dogName.trim()) {
+    if (!formData.dogName?.trim()) {
       tempErrors.dogName = "Dog name is required";
       isValid = false;
     }
 
-    if (!formData.dogBreed.trim()) {
+    if (!formData.dogBreed?.trim()) {
       tempErrors.dogBreed = "Breed is required";
       isValid = false;
     }
 
-    if (!formData.dogAge.trim()) {
+    if (!formData.dogAge?.trim()) {
       tempErrors.dogAge = "Age is required";
       isValid = false;
     }
 
     // Validate training goals
-    if (formData.trainingGoals.length === 0) {
+    if (!formData.trainingGoals || formData.trainingGoals.length === 0) {
       tempErrors.trainingGoals = "Please select at least one training goal";
       isValid = false;
     }
@@ -161,22 +162,41 @@ const ClientForm = () => {
       setIsSubmitting(true);
       
       try {
-        // Replace with your actual API endpoint
-        const response = await fetch('/api/client/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
-
-        if (response.ok) {
+        console.log("Form data to be submitted:", formData);
+        
+        // Simulate API call
+        setTimeout(() => {
+          // Store in localStorage for demo purposes
+          const existingData = JSON.parse(localStorage.getItem('clientSubmissions') || '[]');
+          existingData.push({
+            ...formData,
+            submittedAt: new Date().toISOString()
+          });
+          localStorage.setItem('clientSubmissions', JSON.stringify(existingData));
+          
+          console.log("Data saved to localStorage");
           setSubmitSuccess(true);
-        } else {
-          const errorData = await response.json();
-          setErrors({ submit: errorData.message || 'Failed to create client account' });
-        }
+          
+          // Reset form after successful submission
+          setFormData({
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            address: {
+              street: '',
+              city: '',
+              state: '',
+              zipCode: ''
+            },
+            dogName: '',
+            dogBreed: '',
+            dogAge: '',
+            trainingGoals: []
+          });
+        }, 1000);
       } catch (error) {
+        console.error("Error:", error);
         setErrors({ submit: 'Something went wrong. Please try again.' });
       } finally {
         setIsSubmitting(false);
@@ -187,6 +207,17 @@ const ClientForm = () => {
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-6 text-center">Client Registration</h2>
+      
+      {/* Toggle Debug Button */}
+      <div className="text-right mb-4">
+        <button 
+          type="button"
+          onClick={() => setDebugMode(!debugMode)}
+          className="text-xs text-gray-500 underline"
+        >
+          {debugMode ? 'Hide Debug Info' : 'Show Debug Info'}
+        </button>
+      </div>
       
       {submitSuccess && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
@@ -411,6 +442,16 @@ const ClientForm = () => {
           </button>
         </div>
       </form>
+      
+      {/* Debug information display */}
+      {debugMode && (
+        <div className="mt-8 p-4 border rounded bg-gray-50">
+          <h3 className="text-lg font-semibold mb-2">Current Form Data (Debug):</h3>
+          <pre className="text-xs overflow-auto max-h-96">
+            {JSON.stringify(formData, null, 2)}
+          </pre>
+        </div>
+      )}
     </div>
   );
 };
