@@ -16,6 +16,7 @@ import Header from './components/Layout/Header.jsx';
 import GetStarted from './pages/GetStarted.jsx';
 import ClientRegistrationPage from './pages/ClientRegistrationPage.jsx';
 import TrainerRegistrationPage from './pages/TrainerRegistrationPage.jsx';
+import AdminRegistrationPage from './pages/AdminRegistrationPage.jsx';
 
 function App() {
   return (
@@ -29,9 +30,7 @@ function App() {
         <Route path="/get-started" element={<GetStarted />} />
         <Route path="/client/register" element={<ClientRegistrationPage />} />
         <Route path="/trainer/register" element={<TrainerRegistrationPage />} />
-
-
-
+        <Route path="/admin/register" element={<AdminRegistrationPage />} />
 
         {/* Trainer Dashboard and Nested Routes */}
         <Route
