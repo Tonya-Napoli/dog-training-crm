@@ -1,0 +1,418 @@
+import React, { useState } from 'react';
+
+const ClientForm = () => {
+  const [formData, setFormData] = useState({
+    // Client Information
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: ''
+    },
+    // Dog Information
+    dogName: '',
+    dogBreed: '',
+    dogAge: '',
+    // Training Goals
+    trainingGoals: []
+  });
+
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  const trainingGoalOptions = [
+    { value: 'basicObedience', label: 'Basic Obedience (Sit, Stay, Come)' },
+    { value: 'leashManners', label: 'Leash Manners' },
+    { value: 'houseTraining', label: 'House Training' },
+    { value: 'socialization', label: 'Socialization with Dogs/People' },
+    { value: 'behaviorModification', label: 'Behavior Modification' },
+    { value: 'tricks', label: 'Trick Training' }
+  ];
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+
+    if (name.includes('address.')) {
+      const addressField = name.split('.')[1];
+      setFormData(prevData => ({
+        ...prevData,
+        address: {
+          ...prevData.address,
+          [addressField]: value
+        }
+      }));
+    } else if (type === 'checkbox') {
+      setFormData(prevData => ({
+        ...prevData,
+        [name]: checked
+      }));
+    } else {
+      setFormData(prevData => ({
+        ...prevData,
+        [name]: value
+      }));
+    }
+  };
+
+  const handleGoalChange = (e) => {
+    const value = e.target.value;
+    
+    setFormData(prevData => {
+      if (prevData.trainingGoals.includes(value)) {
+        // Remove goal if already selected
+        return {
+          ...prevData,
+          trainingGoals: prevData.trainingGoals.filter(goal => goal !== value)
+        };
+      } else {
+        // Add goal if not already selected
+        return {
+          ...prevData,
+          trainingGoals: [...prevData.trainingGoals, value]
+        };
+      }
+    });
+  };
+
+  const validateForm = () => {
+    let tempErrors = {};
+    let isValid = true;
+
+    // Validate client information
+    if (!formData.firstName.trim()) {
+      tempErrors.firstName = "First name is required";
+      isValid = false;
+    }
+
+    if (!formData.lastName.trim()) {
+      tempErrors.lastName = "Last name is required";
+      isValid = false;
+    }
+
+    if (!formData.email.trim()) {
+      tempErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      tempErrors.email = "Email is invalid";
+      isValid = false;
+    }
+
+    if (!formData.phone.trim()) {
+      tempErrors.phone = "Phone number is required";
+      isValid = false;
+    }
+
+    // Validate address
+    if (!formData.address.street.trim()) {
+      tempErrors["address.street"] = "Street address is required";
+      isValid = false;
+    }
+
+    if (!formData.address.city.trim()) {
+      tempErrors["address.city"] = "City is required";
+      isValid = false;
+    }
+
+    if (!formData.address.state.trim()) {
+      tempErrors["address.state"] = "State is required";
+      isValid = false;
+    }
+
+    if (!formData.address.zipCode.trim()) {
+      tempErrors["address.zipCode"] = "Zip code is required";
+      isValid = false;
+    }
+
+    // Validate dog information
+    if (!formData.dogName.trim()) {
+      tempErrors.dogName = "Dog name is required";
+      isValid = false;
+    }
+
+    if (!formData.dogBreed.trim()) {
+      tempErrors.dogBreed = "Breed is required";
+      isValid = false;
+    }
+
+    if (!formData.dogAge.trim()) {
+      tempErrors.dogAge = "Age is required";
+      isValid = false;
+    }
+
+    // Validate training goals
+    if (formData.trainingGoals.length === 0) {
+      tempErrors.trainingGoals = "Please select at least one training goal";
+      isValid = false;
+    }
+
+    setErrors(tempErrors);
+    return isValid;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (validateForm()) {
+      setIsSubmitting(true);
+      
+      try {
+        // Replace with your actual API endpoint
+        const response = await fetch('/api/client/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+          setSubmitSuccess(true);
+        } else {
+          const errorData = await response.json();
+          setErrors({ submit: errorData.message || 'Failed to create client account' });
+        }
+      } catch (error) {
+        setErrors({ submit: 'Something went wrong. Please try again.' });
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+      <h2 className="text-2xl font-bold mb-6 text-center">Client Registration</h2>
+      
+      {submitSuccess && (
+        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+          Registration successful!
+        </div>
+      )}
+      
+      {errors.submit && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+          {errors.submit}
+        </div>
+      )}
+      
+      <form onSubmit={handleSubmit}>
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-gray-200">Client Information</h3>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="firstName">
+                First Name*
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg ${errors.firstName ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="lastName">
+                Last Name*
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg ${errors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                Email*
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone">
+                Phone*
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Address*
+            </label>
+            <div className="mb-2">
+              <input
+                type="text"
+                name="address.street"
+                placeholder="Street Address"
+                value={formData.address.street}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg ${errors['address.street'] ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors['address.street'] && <p className="text-red-500 text-xs mt-1">{errors['address.street']}</p>}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <input
+                  type="text"
+                  name="address.city"
+                  placeholder="City"
+                  value={formData.address.city}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-lg ${errors['address.city'] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors['address.city'] && <p className="text-red-500 text-xs mt-1">{errors['address.city']}</p>}
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="address.state"
+                  placeholder="State"
+                  value={formData.address.state}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-lg ${errors['address.state'] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors['address.state'] && <p className="text-red-500 text-xs mt-1">{errors['address.state']}</p>}
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="address.zipCode"
+                  placeholder="Zip Code"
+                  value={formData.address.zipCode}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-lg ${errors['address.zipCode'] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors['address.zipCode'] && <p className="text-red-500 text-xs mt-1">{errors['address.zipCode']}</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Dog Information Section */}
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-gray-200">Dog Information</h3>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="dogName">
+                Dog Name*
+              </label>
+              <input
+                type="text"
+                id="dogName"
+                name="dogName"
+                value={formData.dogName}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg ${errors.dogName ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.dogName && <p className="text-red-500 text-xs mt-1">{errors.dogName}</p>}
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="dogBreed">
+                Breed*
+              </label>
+              <input
+                type="text"
+                id="dogBreed"
+                name="dogBreed"
+                value={formData.dogBreed}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg ${errors.dogBreed ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.dogBreed && <p className="text-red-500 text-xs mt-1">{errors.dogBreed}</p>}
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="dogAge">
+              Age*
+            </label>
+            <input
+              type="text"
+              id="dogAge"
+              name="dogAge"
+              value={formData.dogAge}
+              onChange={handleChange}
+              placeholder="e.g. 2 years"
+              className={`w-full px-3 py-2 border rounded-lg ${errors.dogAge ? 'border-red-500' : 'border-gray-300'}`}
+            />
+            {errors.dogAge && <p className="text-red-500 text-xs mt-1">{errors.dogAge}</p>}
+          </div>
+        </div>
+        
+        {/* Training Goals Section */}
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-gray-200">Training Goals</h3>
+          
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Select Training Goals*
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {trainingGoalOptions.map((option) => (
+                <label key={option.value} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="trainingGoals"
+                    value={option.value}
+                    checked={formData.trainingGoals.includes(option.value)}
+                    onChange={handleGoalChange}
+                    className="mr-2"
+                  />
+                  <span className="text-gray-700 text-sm">{option.label}</span>
+                </label>
+              ))}
+            </div>
+            {errors.trainingGoals && <p className="text-red-500 text-xs mt-1">{errors.trainingGoals}</p>}
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50"
+          >
+            {isSubmitting ? 'Submitting...' : 'Register'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default ClientForm;
