@@ -22,20 +22,13 @@ const TrainerForm = () => {
     },
     bio: '',
     isActive: true,
-    hourlyRate: '',
-    offersGroupClasses: false,
-    canTravelToClient: false,
-    acceptedDogSizes: [],
-    acceptedDogTemperaments: [],
-    trainingPhilosophy: '',
-    serviceArea: '',
-    insuranceInfo: '',
-    dateJoined: new Date().toISOString().split('T')[0]
+    hourlyRate: ''
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
 
   const specialtyOptions = [
     { value: 'basicObedience', label: 'Basic Obedience' },
@@ -43,131 +36,23 @@ const TrainerForm = () => {
     { value: 'behaviorModification', label: 'Behavior Modification' },
     { value: 'aggressionManagement', label: 'Aggression Management' },
     { value: 'anxietyReduction', label: 'Anxiety Reduction' },
-    { value: 'agility', label: 'Agility Training' },
-    { value: 'serviceAnimal', label: 'Service Animal Training' },
-    { value: 'therapyDog', label: 'Therapy Dog Training' },
-    { value: 'scent', label: 'Scent Work/Detection' },
-    { value: 'trickTraining', label: 'Trick Training' }
+    { value: 'serviceAnimal', label: 'Service Animal Training' }
   ];
 
   const certificationOptions = [
     'Certified Professional Dog Trainer (CPDT-KA)',
-    'Catch Canine Trainers Academy (CCDT)',
     'Karen Pryor Academy (KPA-CTP)',
-    'International Association of Animal Behavior Consultants (IAABC)',
     'Association of Professional Dog Trainers (APDT)',
-    'Certification Council for Professional Dog Trainers (CCPDT)',
-    'Animal Behavior College (ABC)',
-    'Victoria Stilwell Academy (VSA)',
+    'AKC Canine Good Citizen Evaluator',
     'Other'
   ];
 
-  const dogSizeOptions = [
-    { value: 'small', label: 'Small (0-20 lbs)' },
-    { value: 'medium', label: 'Medium (21-50 lbs)' },
-    { value: 'large', label: 'Large (51-90 lbs)' },
-    { value: 'extraLarge', label: 'Extra Large (91+ lbs)' }
+  const experienceOptions = [
+    '1-2 years',
+    '3-5 years',
+    '5-10 years',
+    '10+ years'
   ];
-
-  const dogTemperamentOptions = [
-    { value: 'shy', label: 'Shy/Fearful' },
-    { value: 'aggressive', label: 'Aggressive' },
-    { value: 'anxious', label: 'Anxious' },
-    { value: 'reactive', label: 'Reactive' },
-    { value: 'highEnergy', label: 'High Energy' },
-    { value: 'hyperactive', label: 'Hyperactive' }
-  ];
-
-  const validateForm = () => {
-    let tempErrors = {};
-    let isValid = true;
-
-    if (!formData.firstName.trim()) {
-      tempErrors.firstName = "First name is required";
-      isValid = false;
-    }
-
-    if (!formData.lastName.trim()) {
-      tempErrors.lastName = "Last name is required";
-      isValid = false;
-    }
-
-    if (!formData.email.trim()) {
-      tempErrors.email = "Email is required";
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      tempErrors.email = "Email is invalid";
-      isValid = false;
-    }
-
-    if (!formData.password) {
-      tempErrors.password = "Password is required";
-      isValid = false;
-    } else if (formData.password.length < 8) {
-      tempErrors.password = "Password must be at least 8 characters";
-      isValid = false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      tempErrors.confirmPassword = "Passwords do not match";
-      isValid = false;
-    }
-
-    if (formData.specialties.length === 0) {
-      tempErrors.specialties = "Please select at least one specialty";
-      isValid = false;
-    }
-
-    if (!formData.certification) {
-      tempErrors.certification = "Certification is required";
-      isValid = false;
-    }
-
-    if (!formData.experience) {
-      tempErrors.experience = "Experience is required";
-      isValid = false;
-    }
-
-    const anyDaySelected = Object.values(formData.availability).some(day => day);
-    if (!anyDaySelected) {
-      tempErrors.availability = "Please select at least one day of availability";
-      isValid = false;
-    }
-
-    if (!formData.bio.trim()) {
-      tempErrors.bio = "Bio is required";
-      isValid = false;
-    } else if (formData.bio.length < 50) {
-      tempErrors.bio = "Bio should be at least 50 characters";
-      isValid = false;
-    }
-
-    if (!formData.hourlyRate) {
-      tempErrors.hourlyRate = "Hourly rate is required";
-      isValid = false;
-    } else if (isNaN(formData.hourlyRate) || Number(formData.hourlyRate) <= 0) {
-      tempErrors.hourlyRate = "Hourly rate must be a positive number";
-      isValid = false;
-    }
-
-    if (formData.acceptedDogSizes.length === 0) {
-      tempErrors.acceptedDogSizes = "Please select at least one dog size";
-      isValid = false;
-    }
-
-    if (!formData.trainingPhilosophy.trim()) {
-      tempErrors.trainingPhilosophy = "Training philosophy is required";
-      isValid = false;
-    }
-
-    if (!formData.serviceArea.trim()) {
-      tempErrors.serviceArea = "Service area is required";
-      isValid = false;
-    }
-
-    setErrors(tempErrors);
-    return isValid;
-  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -194,25 +79,102 @@ const TrainerForm = () => {
     }
   };
 
-  const handleMultiSelectChange = (e, fieldName) => {
+  const handleSpecialtyChange = (e) => {
     const value = e.target.value;
     
     setFormData(prevData => {
-      // Check if the value is already selected
-      if (prevData[fieldName].includes(value)) {
+      // Check if the specialty is already selected
+      if (prevData.specialties.includes(value)) {
         // If selected, remove it
         return {
           ...prevData,
-          [fieldName]: prevData[fieldName].filter(item => item !== value)
+          specialties: prevData.specialties.filter(specialty => specialty !== value)
         };
       } else {
         // If not selected, add it
         return {
           ...prevData,
-          [fieldName]: [...prevData[fieldName], value]
+          specialties: [...prevData.specialties, value]
         };
       }
     });
+  };
+
+  const validateForm = () => {
+    let tempErrors = {};
+    let isValid = true;
+
+    // Use optional chaining for safe property access
+    if (!formData.firstName?.trim()) {
+      tempErrors.firstName = "First name is required";
+      isValid = false;
+    }
+
+    if (!formData.lastName?.trim()) {
+      tempErrors.lastName = "Last name is required";
+      isValid = false;
+    }
+
+    if (!formData.email?.trim()) {
+      tempErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      tempErrors.email = "Email is invalid";
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      tempErrors.password = "Password is required";
+      isValid = false;
+    } else if (formData.password.length < 8) {
+      tempErrors.password = "Password must be at least 8 characters";
+      isValid = false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      tempErrors.confirmPassword = "Passwords do not match";
+      isValid = false;
+    }
+
+    if (!formData.specialties || formData.specialties.length === 0) {
+      tempErrors.specialties = "Please select at least one specialty";
+      isValid = false;
+    }
+
+    if (!formData.certification) {
+      tempErrors.certification = "Certification is required";
+      isValid = false;
+    }
+
+    if (!formData.experience) {
+      tempErrors.experience = "Experience is required";
+      isValid = false;
+    }
+
+    const anyDaySelected = formData.availability && Object.values(formData.availability).some(day => day);
+    if (!anyDaySelected) {
+      tempErrors.availability = "Please select at least one day of availability";
+      isValid = false;
+    }
+
+    if (!formData.bio?.trim()) {
+      tempErrors.bio = "Bio is required";
+      isValid = false;
+    } else if (formData.bio.length < 50) {
+      tempErrors.bio = "Bio should be at least 50 characters";
+      isValid = false;
+    }
+
+    if (!formData.hourlyRate) {
+      tempErrors.hourlyRate = "Hourly rate is required";
+      isValid = false;
+    } else if (isNaN(formData.hourlyRate) || Number(formData.hourlyRate) <= 0) {
+      tempErrors.hourlyRate = "Hourly rate must be a positive number";
+      isValid = false;
+    }
+
+    setErrors(tempErrors);
+    return isValid;
   };
 
   const handleSubmit = async (e) => {
@@ -222,17 +184,21 @@ const TrainerForm = () => {
       setIsSubmitting(true);
       
       try {
-        // Replace with your actual API endpoint
-        const response = await fetch('/api/trainer/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
-
-        if (response.ok) {
+        console.log("Form data to be submitted:", formData);
+        
+        // Simulate API call
+        setTimeout(() => {
+          // Store in localStorage for demo purposes
+          const existingData = JSON.parse(localStorage.getItem('trainerSubmissions') || '[]');
+          existingData.push({
+            ...formData,
+            submittedAt: new Date().toISOString()
+          });
+          localStorage.setItem('trainerSubmissions', JSON.stringify(existingData));
+          
+          console.log("Data saved to localStorage");
           setSubmitSuccess(true);
+          
           // Reset form after successful submission
           setFormData({
             firstName: '',
@@ -255,21 +221,11 @@ const TrainerForm = () => {
             },
             bio: '',
             isActive: true,
-            hourlyRate: '',
-            offersGroupClasses: false,
-            canTravelToClient: false,
-            acceptedDogSizes: [],
-            acceptedDogTemperaments: [],
-            trainingPhilosophy: '',
-            serviceArea: '',
-            insuranceInfo: '',
-            dateJoined: new Date().toISOString().split('T')[0]
+            hourlyRate: ''
           });
-        } else {
-          const errorData = await response.json();
-          setErrors({ submit: errorData.message || 'Failed to create trainer account' });
-        }
+        }, 1000);
       } catch (error) {
+        console.error("Error:", error);
         setErrors({ submit: 'Something went wrong. Please try again.' });
       } finally {
         setIsSubmitting(false);
@@ -281,9 +237,20 @@ const TrainerForm = () => {
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-6 text-center">Dog Trainer Registration</h2>
       
+      {/* Toggle Debug Button */}
+      <div className="text-right mb-4">
+        <button 
+          type="button"
+          onClick={() => setDebugMode(!debugMode)}
+          className="text-xs text-gray-500 underline"
+        >
+          {debugMode ? 'Hide Debug Info' : 'Show Debug Info'}
+        </button>
+      </div>
+      
       {submitSuccess && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
-          Dog trainer account created successfully!
+          Trainer account created successfully!
         </div>
       )}
       
@@ -385,7 +352,7 @@ const TrainerForm = () => {
                   name="specialties"
                   value={option.value}
                   checked={formData.specialties.includes(option.value)}
-                  onChange={(e) => handleMultiSelectChange(e, 'specialties')}
+                  onChange={handleSpecialtyChange}
                   className="mr-2"
                 />
                 <span className="text-gray-700 text-sm">{option.label}</span>
@@ -426,10 +393,9 @@ const TrainerForm = () => {
             className={`w-full px-3 py-2 border rounded-lg ${errors.experience ? 'border-red-500' : 'border-gray-300'}`}
           >
             <option value="">Select Experience Level</option>
-            <option value="1-2 years">1-2 years</option>
-            <option value="3-5 years">3-5 years</option>
-            <option value="5-10 years">5-10 years</option>
-            <option value="10+ years">10+ years</option>
+            {experienceOptions.map((exp) => (
+              <option key={exp} value={exp}>{exp}</option>
+            ))}
           </select>
           {errors.experience && <p className="text-red-500 text-xs mt-1">{errors.experience}</p>}
         </div>
@@ -455,22 +421,6 @@ const TrainerForm = () => {
         </div>
         
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="trainingPhilosophy">
-            Training Philosophy*
-          </label>
-          <textarea
-            id="trainingPhilosophy"
-            name="trainingPhilosophy"
-            value={formData.trainingPhilosophy}
-            onChange={handleChange}
-            rows="3"
-            className={`w-full px-3 py-2 border rounded-lg ${errors.trainingPhilosophy ? 'border-red-500' : 'border-gray-300'}`}
-            placeholder="Describe your approach to dog training..."
-          ></textarea>
-          {errors.trainingPhilosophy && <p className="text-red-500 text-xs mt-1">{errors.trainingPhilosophy}</p>}
-        </div>
-        
-        <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="bio">
             Bio/Experience Description*
           </label>
@@ -481,68 +431,9 @@ const TrainerForm = () => {
             onChange={handleChange}
             rows="4"
             className={`w-full px-3 py-2 border rounded-lg ${errors.bio ? 'border-red-500' : 'border-gray-300'}`}
-            placeholder="Tell us about your training background, success stories, and experience..."
+            placeholder="Tell us about your training philosophy, background, and expertise..."
           ></textarea>
           {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio}</p>}
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Accepted Dog Sizes*
-          </label>
-          <div className="flex flex-wrap gap-4">
-            {dogSizeOptions.map((option) => (
-              <label key={option.value} className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="acceptedDogSizes"
-                  value={option.value}
-                  checked={formData.acceptedDogSizes.includes(option.value)}
-                  onChange={(e) => handleMultiSelectChange(e, 'acceptedDogSizes')}
-                  className="mr-2"
-                />
-                <span className="text-gray-700 text-sm">{option.label}</span>
-              </label>
-            ))}
-          </div>
-          {errors.acceptedDogSizes && <p className="text-red-500 text-xs mt-1">{errors.acceptedDogSizes}</p>}
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Special Temperaments You Work With
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {dogTemperamentOptions.map((option) => (
-              <label key={option.value} className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="acceptedDogTemperaments"
-                  value={option.value}
-                  checked={formData.acceptedDogTemperaments.includes(option.value)}
-                  onChange={(e) => handleMultiSelectChange(e, 'acceptedDogTemperaments')}
-                  className="mr-2"
-                />
-                <span className="text-gray-700 text-sm">{option.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="serviceArea">
-            Service Area*
-          </label>
-          <input
-            type="text"
-            id="serviceArea"
-            name="serviceArea"
-            value={formData.serviceArea}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-lg ${errors.serviceArea ? 'border-red-500' : 'border-gray-300'}`}
-            placeholder="Cities, counties, or radius you serve"
-          />
-          {errors.serviceArea && <p className="text-red-500 text-xs mt-1">{errors.serviceArea}</p>}
         </div>
         
         <div className="mb-4">
@@ -560,49 +451,6 @@ const TrainerForm = () => {
             className={`w-full px-3 py-2 border rounded-lg ${errors.hourlyRate ? 'border-red-500' : 'border-gray-300'}`}
           />
           {errors.hourlyRate && <p className="text-red-500 text-xs mt-1">{errors.hourlyRate}</p>}
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="insuranceInfo">
-            Insurance Information
-          </label>
-          <input
-            type="text"
-            id="insuranceInfo"
-            name="insuranceInfo"
-            value={formData.insuranceInfo}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            placeholder="Provider name and policy number if applicable"
-          />
-        </div>
-        
-        <div className="mb-4 grid grid-cols-2 gap-4">
-          <div>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="offersGroupClasses"
-                checked={formData.offersGroupClasses}
-                onChange={handleChange}
-                className="mr-2"
-              />
-              <span className="text-gray-700 text-sm">Offers Group Classes</span>
-            </label>
-          </div>
-          
-          <div>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="canTravelToClient"
-                checked={formData.canTravelToClient}
-                onChange={handleChange}
-                className="mr-2"
-              />
-              <span className="text-gray-700 text-sm">Can Travel to Client</span>
-            </label>
-          </div>
         </div>
         
         <div className="mb-6">
@@ -624,10 +472,20 @@ const TrainerForm = () => {
             disabled={isSubmitting}
             className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50"
           >
-            {isSubmitting ? 'Creating...' : 'Create Dog Trainer Profile'}
+            {isSubmitting ? 'Creating...' : 'Create Trainer Account'}
           </button>
         </div>
       </form>
+      
+      {/* Debug information display */}
+      {debugMode && (
+        <div className="mt-8 p-4 border rounded bg-gray-50">
+          <h3 className="text-lg font-semibold mb-2">Current Form Data (Debug):</h3>
+          <pre className="text-xs overflow-auto max-h-96">
+            {JSON.stringify(formData, null, 2)}
+          </pre>
+        </div>
+      )}
     </div>
   );
 };
