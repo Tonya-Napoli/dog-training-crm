@@ -4,6 +4,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import emailRoutes from './src/api/routes/emailRoutes.js';
 import authRoutes from './src/api/routes/authRoutes.js';
+import trainerRoutes from './src/api/routes/trainerRoutes.js';
 
 // Check for SendGrid API key
 if (!process.env.SENDGRID_API_KEY) {
@@ -36,6 +37,7 @@ app.use((err, req, res, next) => {
 // Routes
 app.use('/api', emailRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/trainers', trainerRoutes);
 
 // Default route
 app.get('/', (req, res) => {
