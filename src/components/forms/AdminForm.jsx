@@ -8,7 +8,6 @@ const AdminForm = () => {
     password: '',
     confirmPassword: '',
     role: 'admin',
-    department: '', // This was likely undefined
     accessLevel: 'full',
     isActive: true
   });
@@ -16,17 +15,7 @@ const AdminForm = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-
-  // For debugging - add this to see form data in real-time
   const [debugMode, setDebugMode] = useState(false);
-
-  const departmentOptions = [
-    'IT',
-    'Operations',
-    'Management',
-    'Finance',
-    'Human Resources'
-  ];
 
   const accessLevelOptions = [
     { value: 'full', label: 'Full Access' },
@@ -45,8 +34,7 @@ const AdminForm = () => {
   const validateForm = () => {
     let tempErrors = {};
     let isValid = true;
-
-    // Safely check string fields with optional chaining
+g
     if (!formData.firstName?.trim()) {
       tempErrors.firstName = "First name is required";
       isValid = false;
@@ -78,12 +66,6 @@ const AdminForm = () => {
       isValid = false;
     }
 
-    // Safely check department with optional chaining
-    if (!formData.department?.trim()) {
-      tempErrors.department = "Department is required";
-      isValid = false;
-    }
-
     setErrors(tempErrors);
     return isValid;
   };
@@ -94,13 +76,11 @@ const AdminForm = () => {
     if (validateForm()) {
       setIsSubmitting(true);
       
-      // For testing - store in localStorage instead of sending to API
       try {
         console.log("Form data to be submitted:", formData);
         
-        // Simulate API call
         setTimeout(() => {
-          // Store in localStorage for demo purposes
+
           const existingData = JSON.parse(localStorage.getItem('adminSubmissions') || '[]');
           existingData.push({
             ...formData,
