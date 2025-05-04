@@ -34,7 +34,7 @@ const AdminForm = () => {
   const validateForm = () => {
     let tempErrors = {};
     let isValid = true;
-g
+
     if (!formData.firstName?.trim()) {
       tempErrors.firstName = "First name is required";
       isValid = false;
@@ -79,8 +79,12 @@ g
       try {
         console.log("Form data to be submitted:", formData);
         
+        // In a real implementation, you would make an API call here
+        // For example:
+        // const response = await axios.post('/api/auth/admin/register', formData);
+        
+        // For demo purposes using localStorage
         setTimeout(() => {
-
           const existingData = JSON.parse(localStorage.getItem('adminSubmissions') || '[]');
           existingData.push({
             ...formData,
@@ -99,7 +103,6 @@ g
             password: '',
             confirmPassword: '',
             role: 'admin',
-            department: '',
             accessLevel: 'full',
             isActive: true
           });
@@ -216,25 +219,6 @@ g
             className={`w-full px-3 py-2 border rounded-lg ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
           />
           {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="department">
-            Department*
-          </label>
-          <select
-            id="department"
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-lg ${errors.department ? 'border-red-500' : 'border-gray-300'}`}
-          >
-            <option value="">Select Department</option>
-            {departmentOptions.map((dept) => (
-              <option key={dept} value={dept}>{dept}</option>
-            ))}
-          </select>
-          {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department}</p>}
         </div>
         
         <div className="mb-4">
