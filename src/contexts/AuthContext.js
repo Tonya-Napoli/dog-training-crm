@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
         
         try {
           // Verify token and get user data
-          const res = await axios.get('http://localhost:4000/api/auth/user');
+          const res = await axios.get('/auth/user');
           setUser(res.data);
         } catch (err) {
           console.error('Token validation error:', err);
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const res = await axios.post('http://localhost:4000/api/auth/login', {
+      const res = await axios.post('/auth/login', {
         email,
         password
       });
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
       console.log('User logged in:', res.data.user);
       return true;
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
       console.error('Login error:', err.response?.data || err);
       return false;
     }
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const res = await axios.post('http://localhost:4000/api/auth/register', userData);
+      const res = await axios.post('/auth/register', userData);
       
       // Store token in localStorage
       localStorage.setItem('token', res.data.token);
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }) => {
       console.log('User registered:', res.data.user);
       return true;
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
       console.error('Registration error:', err.response?.data || err);
       return false;
     }
@@ -107,6 +107,16 @@ export const AuthProvider = ({ children }) => {
     setError(null);
   };
 
+  // Get user role
+  const getUserRole = () => {
+    return user?.role || null;
+  };
+
+  // Check if user has a specific role
+  const hasRole = (role) => {
+    return user?.role === role;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -116,7 +126,9 @@ export const AuthProvider = ({ children }) => {
       loading,
       error,
       clearError,
-      isAuthenticated: !!user 
+      isAuthenticated: !!user,
+      getUserRole,
+      hasRole
     }}>
       {children}
     </AuthContext.Provider>
@@ -125,7 +137,6 @@ export const AuthProvider = ({ children }) => {
 
 // Custom hook to use the AuthContext
 export const useAuth = () => useContext(AuthContext);
-
 
 
 

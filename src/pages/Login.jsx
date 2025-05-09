@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import DemoLogin from '../components/DemoLogin';
 
 const Login = () => {
   const { login, error: authError, clearError } = useAuth();
@@ -13,6 +14,7 @@ const Login = () => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDemoMode, setShowDemoMode] = useState(false);
   
   // Handle input changes
   const handleChange = (e) => {
@@ -63,22 +65,8 @@ const Login = () => {
         const success = await login(formData.email, formData.password);
         
         if (success) {
-          // Use auth context to determine which dashboard to go to
-          const { user } = useAuth();
-          if (user) {
-            switch (user.role) {
-              case 'admin':
-                navigate('/admin-dashboard');
-                break;
-              case 'trainer':
-                navigate('/trainer-dashboard');
-                break;
-              case 'client':
-              default:
-                navigate('/client-dashboard');
-                break;
-            }
-          }
+          // Redirect to login success handler which will determine the appropriate dashboard
+          navigate('/auth-success');
         }
       } catch (error) {
         console.error('Login error:', error);
@@ -165,15 +153,27 @@ const Login = () => {
             </button>
           </div>
           
-          <div className="text-center">
+          <div className="text-center mb-4">
             <p className="text-sm">
               Don't have an account?{' '}
-              <Link to="/get-started" className="text-primary hover:text-primary-dark">
-                Get Started
+              <Link to="/register" className="text-primary hover:text-primary-dark">
+                Register here
               </Link>
             </p>
           </div>
+          
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setShowDemoMode(!showDemoMode)}
+              className="text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              {showDemoMode ? 'Hide Demo Mode' : 'Show Demo Mode'}
+            </button>
+          </div>
         </form>
+        
+        {showDemoMode && <DemoLogin />}
       </div>
     </div>
   );
