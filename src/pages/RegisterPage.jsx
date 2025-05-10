@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import AdminForm from '../components/forms/AdminForm';
 import ClientForm from '../components/forms/ClientForm';
 import TrainerForm from '../components/forms/TrainerForm';
 
 const RegisterPage = () => {
   const [selectedRole, setSelectedRole] = useState('client');
-  const navigate = useNavigate();
 
   const handleRoleChange = (role) => {
     setSelectedRole(role);
