@@ -22,11 +22,20 @@ const DemoLogin = () => {
     try {
       // For demo purposes, we'll simulate a successful login
       // In a real app, this would call the actual login endpoint
-      const success = await login(demoUsers[role].email, demoUsers[role].password);
+      await login(demoUsers[role].email, demoUsers[role].password);
       
-      if (success) {
-        // Use the auth success handler to redirect to the correct dashboard
-        navigate('/auth-success');
+      // Navigate based on role
+      switch (role) {
+        case 'admin':
+          navigate('/admin-dashboard');
+          break;
+        case 'trainer':
+          navigate('/trainer-dashboard');
+          break;
+        case 'client':
+        default:
+          navigate('/client-dashboard');
+          break;
       }
     } catch (err) {
       setError('Demo login failed. Please try again.');
