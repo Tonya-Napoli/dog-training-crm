@@ -6,6 +6,8 @@ const ClientForm = () => {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     address: {
       street: '',
@@ -18,7 +20,8 @@ const ClientForm = () => {
     dogBreed: '',
     dogAge: '',
     // Training Goals
-    trainingGoals: []
+    trainingGoals: [],
+    role: 'client' // Add role to ensure proper registration
   });
 
   const [errors, setErrors] = useState({});
@@ -103,6 +106,19 @@ const ClientForm = () => {
       isValid = false;
     }
 
+    if (!formData.password) {
+      tempErrors.password = "Password is required";
+      isValid = false;
+    } else if (formData.password.length < 8) {
+      tempErrors.password = "Password must be at least 8 characters";
+      isValid = false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      tempErrors.confirmPassword = "Passwords do not match";
+      isValid = false;
+    }
+
     if (!formData.phone?.trim()) {
       tempErrors.phone = "Phone number is required";
       isValid = false;
@@ -160,28 +176,29 @@ const ClientForm = () => {
     
     if (validateForm()) {
       setIsSubmitting(true);
+      setStatus("Submitting...");
       
       try {
-        console.log("Form data to be submitted:", formData);
-        
-        // Simulate API call
-        setTimeout(() => {
-          // Store in localStorage for demo purposes
-          const existingData = JSON.parse(localStorage.getItem('clientSubmissions') || '[]');
-          existingData.push({
-            ...formData,
-            submittedAt: new Date().toISOString()
-          });
-          localStorage.setItem('clientSubmissions', JSON.stringify(existingData));
-          
-          console.log("Data saved to localStorage");
+        // Follow the pattern from GetStarted.jsx
+        const response = await fetch("http://localhost:4000/api/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
           setSubmitSuccess(true);
+          setStatus("Registration successful!");
           
           // Reset form after successful submission
           setFormData({
             firstName: '',
             lastName: '',
             email: '',
+            password: '',
+            confirmPassword: '',
             phone: '',
             address: {
               street: '',
@@ -192,17 +209,25 @@ const ClientForm = () => {
             dogName: '',
             dogBreed: '',
             dogAge: '',
-            trainingGoals: []
+            trainingGoals: [],
+            role: 'client'
           });
-        }, 1000);
+        } else {
+          const result = await response.json();
+          setStatus(`Error: ${result.message || 'Registration failed'}`);
+          setErrors({ submit: result.message || 'Registration failed. Please try again.' });
+        }
       } catch (error) {
         console.error("Error:", error);
+        setStatus("Failed to submit. Please try again.");
         setErrors({ submit: 'Something went wrong. Please try again.' });
       } finally {
         setIsSubmitting(false);
       }
     }
   };
+
+  const [status, setStatus] = useState("");
 
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
@@ -228,6 +253,12 @@ const ClientForm = () => {
       {errors.submit && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
           {errors.submit}
+        </div>
+      )}
+
+      {status && (
+        <div className="mb-4 p-3 bg-blue-100 text-blue-700 rounded">
+          {status}
         </div>
       )}
       
@@ -296,6 +327,38 @@ const ClientForm = () => {
                 className={`w-full px-3 py-2 border rounded-lg ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
               />
               {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                Password*
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="confirmPassword">
+                Confirm Password*
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
             </div>
           </div>
           
