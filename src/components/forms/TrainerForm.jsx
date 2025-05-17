@@ -42,10 +42,11 @@ const TrainerForm = () => {
   ];
 
   const certificationOptions = [
-    'Certified Professional Dog Trainer (CPDT-KA)',
-    'Karen Pryor Academy (KPA-CTP)',
-    'Association of Professional Dog Trainers (APDT)',
+    'Certified Dog Trainer (CDT)',
     'AKC Canine Good Citizen Evaluator',
+    'AKC Fit Dog',
+    'AKC Trick Dog Evaluator',
+    'Prong Collar Knowledge Assessment (PCKA)',
     'Other'
   ];
 
