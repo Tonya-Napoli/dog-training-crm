@@ -1,20 +1,36 @@
-// src/api/controllers/authController.js
-import User from '../models/userModel.js';
+import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import sgMail from '@sendgrid/mail';
 
-// Register a new client
-export const registerClient = async (req, res) => {
+// Setup SendGrid
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+// Register a new user (client, trainer, or admin)
+export const registerUser = async (req, res) => {
   try {
     const { 
       firstName, 
       lastName, 
       email, 
       password, 
-      phone, 
+      role = 'client',
+      phone,
       address,
+      dogName,
+      dogBreed,
+      dogAge,
+      trainingGoals,
+      specialties,
+      certification,
+      experience,
+      availability,
+      bio,
+      hourlyRate,
+      department,
+      accessLevel,
       emergencyContact,
-      agreesToTerms
+      agreesToTerms = true
     } = req.body;
 
     // Check if user already exists
@@ -28,27 +44,31 @@ export const registerClient = async (req, res) => {
       return res.status(400).json({ message: 'First name, last name, email, and password are required' });
     }
 
-    // Validate terms agreement
-    if (!agreesToTerms) {
-      return res.status(400).json({ message: 'You must agree to terms and conditions' });
-    }
-
     // Create new user
     const newUser = new User({
       firstName,
       lastName,
       email,
       password, // Will be hashed by pre-save hook
-      role: 'client',
+      role,
       phone,
-      address,
-      emergencyContact,
-      agreesToTerms
+      address
     });
 
-    // Add profile image if uploaded
-    if (req.file) {
-      newUser.profileImage = `/uploads/profile-images/${req.file.filename}`;
+    // Add role-specific fields
+    if (role === 'client') {
+      // Add client-specific fields
+      newUser.dogs = []; // Will create dog record separately
+    } else if (role === 'trainer') {
+      // Add trainer-specific fields
+      newUser.certifications = specialties || [];
+      newUser.specialties = specialties || [];
+      newUser.availabilitySchedule = availability;
+      newUser.profile = { bio, hourlyRate };
+    } else if (role === 'admin') {
+      // Add admin-specific fields
+      newUser.department = department;
+      newUser.accessLevel = accessLevel;
     }
 
     await newUser.save();
@@ -60,6 +80,83 @@ export const registerClient = async (req, res) => {
       { expiresIn: '30d' }
     );
 
+    // Send email notification based on role
+    try {
+      const notificationEmail = process.env.NOTIFICATION_EMAIL || 'info@puppyprostraining.com';
+      
+      let emailTemplate;
+      
+      switch(role) {
+        case 'client':
+          emailTemplate = {
+            subject: `New Client Registration: ${firstName} ${lastName}`,
+            html: `
+              <h2>New Client Registration</h2>
+              <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+              <p><strong>Dog Information:</strong></p>
+              <p>Name: ${dogName || 'Not provided'}</p>
+              <p>Breed: ${dogBreed || 'Not provided'}</p>
+              <p>Age: ${dogAge || 'Not provided'}</p>
+              <p><strong>Training Goals:</strong> ${trainingGoals ? trainingGoals.join(', ') : 'None specified'}</p>
+            `
+          };
+          break;
+        case 'trainer':
+          emailTemplate = {
+            subject: `New Trainer Registration: ${firstName} ${lastName}`,
+            html: `
+              <h2>New Trainer Registration</h2>
+              <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+              <p><strong>Certifications:</strong> ${certification || 'Not provided'}</p>
+              <p><strong>Experience:</strong> ${experience || 'Not provided'}</p>
+              <p><strong>Specialties:</strong> ${specialties ? specialties.join(', ') : 'None specified'}</p>
+              <p><strong>Hourly Rate:</strong> $${hourlyRate || 'Not specified'}</p>
+              <p><strong>Bio:</strong> ${bio || 'Not provided'}</p>
+            `
+          };
+          break;
+        case 'admin':
+          emailTemplate = {
+            subject: `New Admin Registration: ${firstName} ${lastName}`,
+            html: `
+              <h2>New Admin Registration</h2>
+              <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Department:</strong> ${department || 'Not specified'}</p>
+              <p><strong>Access Level:</strong> ${accessLevel || 'Full'}</p>
+            `
+          };
+          break;
+        default:
+          emailTemplate = {
+            subject: `New User Registration: ${firstName} ${lastName}`,
+            html: `
+              <h2>New User Registration</h2>
+              <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Role:</strong> ${role}</p>
+            `
+          };
+      }
+      
+      const msg = {
+        to: notificationEmail,
+        from: 'notifications@puppyprostraining.com', // Change to your verified sender
+        subject: emailTemplate.subject,
+        html: emailTemplate.html
+      };
+
+      await sgMail.send(msg);
+      console.log(`Notification email sent for ${role} registration`);
+    } catch (emailError) {
+      // Log the error but don't fail the registration
+      console.error('Email notification error:', emailError);
+    }
+
     // Return user data without password
     const userData = newUser.toObject();
     delete userData.password;
@@ -70,6 +167,7 @@ export const registerClient = async (req, res) => {
       user: userData
     });
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ message: 'Registration failed', error: error.message });
   }
 };
