@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from '../../axios'; 
 
 const TrainerForm = () => {
   const [formData, setFormData] = useState({
@@ -26,10 +25,10 @@ const TrainerForm = () => {
     hourlyRate: ''
   });
 
-  const [profileImage, setProfileImage] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [status, setStatus] = useState("");
   const [debugMode, setDebugMode] = useState(false);
 
   const specialtyOptions = [
@@ -42,11 +41,10 @@ const TrainerForm = () => {
   ];
 
   const certificationOptions = [
-    'Certified Dog Trainer (CDT)',
+    'Certified Professional Dog Trainer (CPDT-KA)',
+    'Karen Pryor Academy (KPA-CTP)',
+    'Association of Professional Dog Trainers (APDT)',
     'AKC Canine Good Citizen Evaluator',
-    'AKC Fit Dog',
-    'AKC Trick Dog Evaluator',
-    'Prong Collar Knowledge Assessment (PCKA)',
     'Other'
   ];
 
@@ -101,12 +99,6 @@ const TrainerForm = () => {
         };
       }
     });
-  };
-
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setProfileImage(e.target.files[0]);
-    }
   };
 
   const validateForm = () => {
@@ -191,65 +183,55 @@ const TrainerForm = () => {
     
     if (validateForm()) {
       setIsSubmitting(true);
+      setStatus("Submitting...");
       
       try {
-        // Create FormData object for file upload
-        const formDataToSend = new FormData();
-        
-        // Add all form fields to FormData
-        Object.keys(formData).forEach(key => {
-          if (key === 'availability' || key === 'specialties') {
-            formDataToSend.append(key, JSON.stringify(formData[key]));
-          } else {
-            formDataToSend.append(key, formData[key]);
-          }
-        });
-        
-        // Add profile image if selected
-        if (profileImage) {
-          formDataToSend.append('profileImage', profileImage);
-        }
-        
-        // Make API request
-        const response = await axios.post('/trainers/register', formDataToSend, {
+        // Follow the pattern from GetStarted.jsx
+        const response = await fetch("http://localhost:4000/api/auth/register", {
+          method: "POST",
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        
-        console.log("Registration successful:", response.data);
-        setSubmitSuccess(true);
-        
-        // Reset form after successful submission
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-          role: 'trainer',
-          specialties: [],
-          certification: '',
-          experience: '',
-          availability: {
-            monday: false,
-            tuesday: false,
-            wednesday: false,
-            thursday: false,
-            friday: false,
-            saturday: false,
-            sunday: false
+            "Content-Type": "application/json",
           },
-          bio: '',
-          isActive: true,
-          hourlyRate: ''
+          body: JSON.stringify(formData),
         });
-        setProfileImage(null);
+
+        if (response.ok) {
+          setSubmitSuccess(true);
+          setStatus("Registration successful!");
+          
+          // Reset form after successful submission
+          setFormData({
+            firstName: '',
+            lastName: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            role: 'trainer',
+            specialties: [],
+            certification: '',
+            experience: '',
+            availability: {
+              monday: false,
+              tuesday: false,
+              wednesday: false,
+              thursday: false,
+              friday: false,
+              saturday: false,
+              sunday: false
+            },
+            bio: '',
+            isActive: true,
+            hourlyRate: ''
+          });
+        } else {
+          const result = await response.json();
+          setStatus(`Error: ${result.message || 'Registration failed'}`);
+          setErrors({ submit: result.message || 'Registration failed. Please try again.' });
+        }
       } catch (error) {
-        console.error("Error:", error.response?.data || error);
-        setErrors({ 
-          submit: error.response?.data?.message || 'Something went wrong. Please try again.' 
-        });
+        console.error("Error:", error);
+        setStatus("Failed to submit. Please try again.");
+        setErrors({ submit: 'Something went wrong. Please try again.' });
       } finally {
         setIsSubmitting(false);
       }
@@ -280,6 +262,12 @@ const TrainerForm = () => {
       {errors.submit && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
           {errors.submit}
+        </div>
+      )}
+
+      {status && (
+        <div className="mb-4 p-3 bg-blue-100 text-blue-700 rounded">
+          {status}
         </div>
       )}
       
@@ -361,21 +349,6 @@ const TrainerForm = () => {
             />
             {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
           </div>
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="profileImage">
-            Profile Image
-          </label>
-          <input
-            type="file"
-            id="profileImage"
-            name="profileImage"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-          />
-          <p className="text-gray-500 text-xs mt-1">Upload a professional photo (Max 5MB)</p>
         </div>
         
         <div className="mb-4">
