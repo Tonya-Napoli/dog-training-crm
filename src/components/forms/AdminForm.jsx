@@ -8,6 +8,7 @@ const AdminForm = () => {
     password: '',
     confirmPassword: '',
     role: 'admin',
+    department: '',
     accessLevel: 'full',
     isActive: true
   });
@@ -15,7 +16,16 @@ const AdminForm = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [status, setStatus] = useState("");
   const [debugMode, setDebugMode] = useState(false);
+
+  const departmentOptions = [
+    'IT',
+    'Operations',
+    'Management',
+    'Finance',
+    'Human Resources'
+  ];
 
   const accessLevelOptions = [
     { value: 'full', label: 'Full Access' },
@@ -35,6 +45,7 @@ const AdminForm = () => {
     let tempErrors = {};
     let isValid = true;
 
+    // Safely check string fields with optional chaining
     if (!formData.firstName?.trim()) {
       tempErrors.firstName = "First name is required";
       isValid = false;
@@ -66,6 +77,12 @@ const AdminForm = () => {
       isValid = false;
     }
 
+    // Safely check department with optional chaining
+    if (!formData.department?.trim()) {
+      tempErrors.department = "Department is required";
+      isValid = false;
+    }
+
     setErrors(tempErrors);
     return isValid;
   };
@@ -75,25 +92,21 @@ const AdminForm = () => {
     
     if (validateForm()) {
       setIsSubmitting(true);
+      setStatus("Submitting...");
       
       try {
-        console.log("Form data to be submitted:", formData);
-        
-        // In a real implementation, you would make an API call here
-        // For example:
-        // const response = await axios.post('/api/auth/admin/register', formData);
-        
-        // For demo purposes using localStorage
-        setTimeout(() => {
-          const existingData = JSON.parse(localStorage.getItem('adminSubmissions') || '[]');
-          existingData.push({
-            ...formData,
-            submittedAt: new Date().toISOString()
-          });
-          localStorage.setItem('adminSubmissions', JSON.stringify(existingData));
-          
-          console.log("Data saved to localStorage");
+        // Follow the pattern from GetStarted.jsx
+        const response = await fetch("http://localhost:4000/api/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
           setSubmitSuccess(true);
+          setStatus("Admin account created successfully!");
           
           // Reset form after successful submission
           setFormData({
@@ -103,12 +116,18 @@ const AdminForm = () => {
             password: '',
             confirmPassword: '',
             role: 'admin',
+            department: '',
             accessLevel: 'full',
             isActive: true
           });
-        }, 1000);
+        } else {
+          const result = await response.json();
+          setStatus(`Error: ${result.message || 'Registration failed'}`);
+          setErrors({ submit: result.message || 'Registration failed. Please try again.' });
+        }
       } catch (error) {
         console.error("Error:", error);
+        setStatus("Failed to create admin account. Please try again.");
         setErrors({ submit: 'Something went wrong. Please try again.' });
       } finally {
         setIsSubmitting(false);
@@ -140,6 +159,12 @@ const AdminForm = () => {
       {errors.submit && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
           {errors.submit}
+        </div>
+      )}
+
+      {status && (
+        <div className="mb-4 p-3 bg-blue-100 text-blue-700 rounded">
+          {status}
         </div>
       )}
       
@@ -219,6 +244,25 @@ const AdminForm = () => {
             className={`w-full px-3 py-2 border rounded-lg ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
           />
           {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="department">
+            Department*
+          </label>
+          <select
+            id="department"
+            name="department"
+            value={formData.department}
+            onChange={handleChange}
+            className={`w-full px-3 py-2 border rounded-lg ${errors.department ? 'border-red-500' : 'border-gray-300'}`}
+          >
+            <option value="">Select Department</option>
+            {departmentOptions.map((dept) => (
+              <option key={dept} value={dept}>{dept}</option>
+            ))}
+          </select>
+          {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department}</p>}
         </div>
         
         <div className="mb-4">
