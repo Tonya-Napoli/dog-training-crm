@@ -10,6 +10,105 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const router = express.Router();
 
+
+// @route   POST api/auth/create-admin
+// @desc    Create a new admin account (admin-only)
+// @access  Private (Admin only)
+router.post('/create-admin', auth, async (req, res) => {
+  try {
+    // Check if the requesting user is an admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+    }
+
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      password, 
+      department,
+      accessLevel = 'full'
+    } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ 
+        message: 'First name, last name, email, and password are required' 
+      });
+    }
+
+    // Check if user already exists
+    let existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    // Create new admin user
+    const newAdmin = new User({
+      firstName,
+      lastName,
+      email,
+      password, // Will be hashed by pre-save hook
+      role: 'admin',
+      department,
+      accessLevel,
+      agreesToTerms: true,
+      createdBy: req.user.id // Track who created this admin
+    });
+
+    await newAdmin.save();
+
+    // Log the admin creation for security audit
+    console.log(`New admin account created: ${email} by ${req.user.email || req.user.id}`);
+
+    // Return success without password
+    const adminData = newAdmin.toObject();
+    delete adminData.password;
+
+    res.status(201).json({
+      message: 'Admin account created successfully',
+      admin: adminData
+    });
+
+  } catch (err) {
+    console.error('Error creating admin account:', err.message);
+    res.status(500).json({ message: 'Server error while creating admin account' });
+  }
+});
+
+// @route   GET api/auth/admin/users
+// @desc    Get all users (admin-only)
+// @access  Private (Admin only)
+router.get('/admin/users', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+    }
+
+    const { page = 1, limit = 10, role } = req.query;
+    const query = role ? { role } : {};
+    
+    const users = await User.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await User.countDocuments(query);
+
+    res.json({
+      users,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total
+    });
+
+  } catch (err) {
+    console.error('Error fetching users:', err.message);
+    res.status(500).json({ message: 'Server error while fetching users' });
+  }
+});
+
 // @route   POST api/auth/register
 // @desc    Register a user
 // @access  Public
