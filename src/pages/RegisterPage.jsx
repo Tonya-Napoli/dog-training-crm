@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import AdminForm from '../components/forms/AdminForm';
 import ClientForm from '../components/forms/ClientForm';
 import TrainerForm from '../components/forms/TrainerForm';
 
@@ -14,8 +13,6 @@ const RegisterPage = () => {
   // Function to render the appropriate registration form based on role
   const renderForm = () => {
     switch (selectedRole) {
-      case 'admin':
-        return <AdminForm />;
       case 'trainer':
         return <TrainerForm />;
       case 'client':
@@ -53,17 +50,7 @@ const RegisterPage = () => {
             >
               Trainer
             </button>
-            <button
-              type="button"
-              onClick={() => handleRoleChange('admin')}
-              className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
-                selectedRole === 'admin'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-              }`}
-            >
-              Admin
-            </button>
+            
           </div>
         </div>
         
