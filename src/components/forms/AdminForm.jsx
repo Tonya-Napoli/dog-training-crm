@@ -8,7 +8,6 @@ const AdminForm = () => {
     password: '',
     confirmPassword: '',
     role: 'admin',
-    department: '',
     accessLevel: 'full',
     isActive: true
   });
@@ -19,13 +18,6 @@ const AdminForm = () => {
   const [status, setStatus] = useState("");
   const [debugMode, setDebugMode] = useState(false);
 
-  const departmentOptions = [
-    'IT',
-    'Operations',
-    'Management',
-    'Finance',
-    'Human Resources'
-  ];
 
   const accessLevelOptions = [
     { value: 'full', label: 'Full Access' },
@@ -77,11 +69,7 @@ const AdminForm = () => {
       isValid = false;
     }
 
-    // Safely check department with optional chaining
-    if (!formData.department?.trim()) {
-      tempErrors.department = "Department is required";
-      isValid = false;
-    }
+
 
     setErrors(tempErrors);
     return isValid;
@@ -116,7 +104,6 @@ const AdminForm = () => {
             password: '',
             confirmPassword: '',
             role: 'admin',
-            department: '',
             accessLevel: 'full',
             isActive: true
           });
@@ -244,25 +231,6 @@ const AdminForm = () => {
             className={`w-full px-3 py-2 border rounded-lg ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
           />
           {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="department">
-            Department*
-          </label>
-          <select
-            id="department"
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-lg ${errors.department ? 'border-red-500' : 'border-gray-300'}`}
-          >
-            <option value="">Select Department</option>
-            {departmentOptions.map((dept) => (
-              <option key={dept} value={dept}>{dept}</option>
-            ))}
-          </select>
-          {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department}</p>}
         </div>
         
         <div className="mb-4">
