@@ -42,7 +42,9 @@
     "eject": "react-scripts eject",
     "server": "nodemon server.js",
     "create-admin": "node scripts/createInitialAdmin.js",
-    "seed-admin": "node scripts/createInitialAdmin.js"
+    "seed-admin": "node scripts/createInitialAdmin.js",
+    "check-db": "node scripts/manageDatabase.js",
+    "clear-non-admin": "node scripts/manageDatabase.js clear-non-admin"
   },
   "eslintConfig": {
     "extends": [
