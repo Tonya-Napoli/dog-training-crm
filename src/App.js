@@ -16,6 +16,8 @@ import Header from './components/Layout/Header.jsx';
 import GetStarted from './pages/GetStarted.jsx';
 import ClientRegistrationPage from './pages/ClientRegistrationPage.jsx';
 import TrainerRegistrationPage from './pages/TrainerRegistrationPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx'; // Add this import
+// Import the protected admin creation component
 import CreateAdminForm from './components/admin/CreateAdminForm.jsx';
 
 function App() {
@@ -29,7 +31,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/get-started" element={<GetStarted />} />
         
-        {/* Public registration for clients and trainers only */}
+        {/* Registration Routes */}
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/client/register" element={<ClientRegistrationPage />} />
         <Route path="/trainer/register" element={<TrainerRegistrationPage />} />
         
