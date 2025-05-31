@@ -174,56 +174,67 @@ const ClientForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      setIsSubmitting(true);
-      setStatus("Submitting...");
-      
-      try {
-        // Follow the pattern from GetStarted.jsx
-        const response = await fetch("http://localhost:4000/api/auth/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        });
+    if (!validateForm()) return;
 
-        if (response.ok) {
-          setSubmitSuccess(true);
-          setStatus("Registration successful!");
-          
-          // Reset form after successful submission
-          setFormData({
-            firstName: '',
-            lastName: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-            phone: '',
-            address: {
-              street: '',
-              city: '',
-              state: '',
-              zipCode: ''
-            },
-            dogName: '',
-            dogBreed: '',
-            dogAge: '',
-            trainingGoals: [],
-            role: 'client'
-          });
-        } else {
-          const result = await response.json();
-          setStatus(`Error: ${result.message || 'Registration failed'}`);
-          setErrors({ submit: result.message || 'Registration failed. Please try again.' });
+    setIsSubmitting(true);
+    setErrors({});
+
+    try {
+      console.log("Submitting client registration:", formData);
+      
+      const response = await fetch('http://localhost:4000/api/auth/register-client', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitSuccess(true);
+        console.log('Client registration successful:', data);
+        
+        // Optionally store the token and redirect
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          // You could redirect to client dashboard here
+          // window.location.href = '/client-dashboard';
         }
-      } catch (error) {
-        console.error("Error:", error);
-        setStatus("Failed to submit. Please try again.");
-        setErrors({ submit: 'Something went wrong. Please try again.' });
-      } finally {
-        setIsSubmitting(false);
+        
+        // Reset form after successful submission
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          phone: '',
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            zipCode: ''
+          },
+          dogName: '',
+          dogBreed: '',
+          dogAge: '',
+          trainingGoals: []
+        });
+      } else {
+        // Handle error response
+        setErrors({ 
+          submit: data.message || 'Registration failed. Please try again.' 
+        });
       }
+    } catch (error) {
+      console.error("Registration error:", error);
+      setErrors({ 
+        submit: 'Network error. Please check your connection and try again.' 
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
