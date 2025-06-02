@@ -1,4 +1,3 @@
-// scripts/manageDatabase.js
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import User from '../src/api/models/User.js';
