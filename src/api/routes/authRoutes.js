@@ -87,6 +87,290 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
+// @route   POST api/auth/register-trainer
+// @desc    Register a trainer with all trainer-specific fields
+// @access  Public
+router.post('/register-trainer', async (req, res) => {
+  try {
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      password,
+      specialties,
+      certification,
+      experience,
+      availability,
+      bio,
+      hourlyRate
+    } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ 
+        message: 'First name, last name, email, and password are required' 
+      });
+    }
+
+    if (!specialties || specialties.length === 0) {
+      return res.status(400).json({ 
+        message: 'At least one specialty is required' 
+      });
+    }
+
+    if (!certification) {
+      return res.status(400).json({ 
+        message: 'Certification is required' 
+      });
+    }
+
+    if (!experience) {
+      return res.status(400).json({ 
+        message: 'Experience level is required' 
+      });
+    }
+
+    if (!bio || bio.trim().length < 50) {
+      return res.status(400).json({ 
+        message: 'Bio must be at least 50 characters long' 
+      });
+    }
+
+    if (!hourlyRate || isNaN(hourlyRate) || Number(hourlyRate) <= 0) {
+      return res.status(400).json({ 
+        message: 'Valid hourly rate is required' 
+      });
+    }
+
+    // Password validation
+    if (password.length < 8) {
+      return res.status(400).json({ 
+        message: 'Password must be at least 8 characters long' 
+      });
+    }
+
+    // Validate availability (at least one day selected)
+    const hasAvailability = availability && Object.values(availability).some(day => day === true);
+    if (!hasAvailability) {
+      return res.status(400).json({ 
+        message: 'Please select at least one day of availability' 
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    // Generate username
+    const baseUsername = email.split('@')[0].toLowerCase();
+    let username = baseUsername;
+    let counter = 1;
+    
+    while (await User.findOne({ username: username })) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+
+    // Create new trainer
+    const newTrainer = new User({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      username: username,
+      email: email.toLowerCase().trim(),
+      password,
+      role: 'trainer',
+      specialties,
+      certifications: [certification],
+      experience,
+      availability,
+      bio: bio.trim(),
+      hourlyRate: Number(hourlyRate),
+      isActive: true,
+      agreesToTerms: true
+    });
+
+    await newTrainer.save();
+
+    // Create JWT token
+    const token = await createToken(newTrainer);
+
+    // Log registration for audit
+    console.log(`New trainer registered: ${email}`);
+    console.log(`Specialties: ${specialties.join(', ')}`);
+    console.log(`Experience: ${experience}, Rate: ${hourlyRate}/hr`);
+
+    res.status(201).json({
+      message: 'Trainer registration successful',
+      token,
+      user: formatUserResponse(newTrainer)
+    });
+
+  } catch (err) {
+    console.error('Trainer registration error:', err);
+    
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors 
+      });
+    }
+
+    if (err.code === 11000) {
+      return res.status(400).json({ 
+        message: 'Email already registered' 
+      });
+    }
+
+    res.status(500).json({ 
+      message: 'Server error during registration',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// @route   POST api/auth/register-client
+// @desc    Register a client with dog information and training goals
+// @access  Public
+router.post('/register-client', async (req, res) => {
+  try {
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      password,
+      phone,
+      address,
+      dogName,
+      dogBreed,
+      dogAge,
+      trainingGoals
+    } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ 
+        message: 'First name, last name, email, and password are required' 
+      });
+    }
+
+    if (!phone) {
+      return res.status(400).json({ 
+        message: 'Phone number is required' 
+      });
+    }
+
+    if (!address || !address.street || !address.city || !address.state || !address.zipCode) {
+      return res.status(400).json({ 
+        message: 'Complete address is required' 
+      });
+    }
+
+    if (!dogName || !dogBreed || !dogAge) {
+      return res.status(400).json({ 
+        message: 'Dog information (name, breed, age) is required' 
+      });
+    }
+
+    if (!trainingGoals || trainingGoals.length === 0) {
+      return res.status(400).json({ 
+        message: 'At least one training goal must be selected' 
+      });
+    }
+
+    // Password validation
+    if (password.length < 8) {
+      return res.status(400).json({ 
+        message: 'Password must be at least 8 characters long' 
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    // Generate username
+    const baseUsername = email.split('@')[0].toLowerCase();
+    let username = baseUsername;
+    let counter = 1;
+    
+    while (await User.findOne({ username: username })) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+
+    // Create new client
+    const newClient = new User({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      username: username,
+      email: email.toLowerCase().trim(),
+      password,
+      role: 'client',
+      phone: phone.trim(),
+      address: {
+        street: address.street.trim(),
+        city: address.city.trim(),
+        state: address.state.trim(),
+        zipCode: address.zipCode.trim()
+      },
+      dogName: dogName.trim(),
+      dogBreed: dogBreed.trim(),
+      dogAge: dogAge.trim(),
+      trainingGoals: trainingGoals,
+      isActive: true,
+      agreesToTerms: true
+    });
+
+    await newClient.save();
+
+    // Create JWT token
+    const token = await createToken(newClient);
+
+    // Log registration for audit
+    console.log(`New client registered: ${email} - Dog: ${dogName} (${dogBreed})`);
+    console.log(`Training goals: ${trainingGoals.join(', ')}`);
+
+    res.status(201).json({
+      message: 'Client registration successful',
+      token,
+      user: formatUserResponse(newClient),
+      dogInfo: {
+        name: dogName,
+        breed: dogBreed,
+        age: dogAge,
+        trainingGoals
+      }
+    });
+
+  } catch (err) {
+    console.error('Client registration error:', err);
+    
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors 
+      });
+    }
+
+    if (err.code === 11000) {
+      return res.status(400).json({ 
+        message: 'Email already registered' 
+      });
+    }
+
+    res.status(500).json({ 
+      message: 'Server error during registration',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
 // @route   POST api/auth/register
 // @desc    General registration endpoint (maintains compatibility)
 // @access  Public
