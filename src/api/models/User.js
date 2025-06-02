@@ -1,3 +1,4 @@
+// src/api/models/User.js - Enhanced User model
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
@@ -10,6 +11,12 @@ const userSchema = new mongoose.Schema({
   lastName: {
     type: String,
     required: true,
+    trim: true
+  },
+  username: {
+    type: String,
+    required: true,
+    unique: true,
     trim: true
   },
   email: {
@@ -44,15 +51,38 @@ const userSchema = new mongoose.Schema({
     phone: String
   },
   profileImage: String,
-  dogs: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Dog'
-  }],
   
-  // Fields specific to trainers
+  // Trainer-specific fields
+  specialties: [{
+    type: String,
+    enum: [
+      'basicObedience',
+      'puppyTraining', 
+      'behaviorModification',
+      'aggressionManagement',
+      'anxietyReduction',
+      'serviceAnimal',
+      'leashManners',
+      'houseTraining',
+      'socialization',
+      'tricks',
+      'agilityTraining',
+      'therapyDog',
+      'competitionTraining',
+      'searchAndRescue',
+      'protectionTraining',
+      'fearRehabiliation',
+      'reactiveeDogTraining',
+      'puppySocialization',
+      'advancedObedience',
+      'sportDogTraining'
+    ]
+  }],
   certifications: [String],
-  specialties: [String],
-  experience: String,
+  experience: {
+    type: String,
+    enum: ['1-2 years', '3-5 years', '5-10 years', '10+ years']
+  },
   availability: {
     monday: { type: Boolean, default: false },
     tuesday: { type: Boolean, default: false },
@@ -65,46 +95,72 @@ const userSchema = new mongoose.Schema({
   bio: String,
   hourlyRate: Number,
   
-  // Admin-specific fields
-  accessLevel: {
+  // Client-specific fields
+  dogName: String,
+  dogBreed: String,
+  dogAge: String,
+  trainingGoals: [{
     type: String,
-    enum: ['full', 'limited', 'readonly'],
-    default: 'full',
-    required: function() { return this.role === 'admin'; }
-  },
+    enum: [
+      'basicObedience',
+      'leashManners',
+      'houseTraining',
+      'socialization',
+      'behaviorModification', 
+      'tricks',
+      'agilityTraining',
+      'puppyTraining',
+      'advancedObedience',
+      'reactiveeDogTraining',
+      'fearRehabiliation',
+      'aggressionManagement',
+      'anxietyReduction'
+    ]
+  }],
   
-  // Relationship fields
-  // For clients: their assigned trainer
-  trainer: {
+  // Client-trainer relationship
+  assignedTrainer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+  
   // For trainers: their clients
   clients: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
   
-  // Audit and tracking fields
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+  // Admin fields
+  accessLevel: {
+    type: String,
+    enum: ['full', 'limited', 'readonly'],
+    default: 'full'
   },
-  lastLogin: {
-    type: Date
-  },
+  
+  // Common fields
   isActive: {
     type: Boolean,
     default: true
   },
-  
   agreesToTerms: {
     type: Boolean,
     required: true,
     default: false
+  },
+  lastLogin: Date,
+  created: {
+    type: Date,
+    default: Date.now
   }
 }, { 
-  timestamps: true // This adds createdAt and updatedAt automatically
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual for full name
+userSchema.virtual('fullName').get(function() {
+  return `${this.firstName} ${this.lastName}`;
 });
 
 // Hash password before saving
@@ -120,30 +176,28 @@ userSchema.pre('save', async function(next) {
   }
 });
 
+// Update the updatedAt field before saving
+userSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
 // Method to compare passwords
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Method to update last login
-userSchema.methods.updateLastLogin = function() {
+userSchema.methods.updateLastLogin = async function() {
   this.lastLogin = new Date();
-  return this.save();
+  return await this.save();
 };
 
-// Virtual for full name
-userSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
-});
-
-// Ensure virtual fields are serialized
-userSchema.set('toJSON', {
-  virtuals: true,
-  transform: function(doc, ret) {
-    delete ret.password; // Always exclude password from JSON output
-    return ret;
-  }
-});
+// Index for better query performance
+userSchema.index({ email: 1 });
+userSchema.index({ username: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ isActive: 1 });
 
 const User = mongoose.model('User', userSchema);
 
