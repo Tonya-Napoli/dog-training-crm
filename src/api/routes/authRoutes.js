@@ -509,6 +509,62 @@ router.post('/login', async (req, res) => {
     });
   }
 });
+// @route   GET api/auth/users
+// @desc    Get all users (admin only)
+// @access  Private (Admin)
+router.get('/users', auth, async (req, res) => {
+  try {
+    const { role, search } = req.query;
+    
+    // Build query
+    let query = {};
+    if (role) {
+      query.role = role;
+    }
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Get users (excluding passwords)
+    const users = await User.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.json({ users });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   PUT api/auth/users/:id/status
+// @desc    Update user active status (admin only)
+// @access  Private (Admin)
+router.put('/users/:id/status', auth, async (req, res) => {
+  try {
+    const { isActive } = req.body;
+    
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { isActive },
+      { new: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 
 // @route   GET api/auth/user
 // @desc    Get logged in user
