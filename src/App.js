@@ -16,8 +16,7 @@ import Header from './components/Layout/Header.jsx';
 import GetStarted from './pages/GetStarted.jsx';
 import ClientRegistrationPage from './pages/ClientRegistrationPage.jsx';
 import TrainerRegistrationPage from './pages/TrainerRegistrationPage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx'; // Add this import
-// Import the protected admin creation component
+import RegisterPage from './pages/RegisterPage.jsx'; 
 import CreateAdminForm from './components/admin/CreateAdminForm.jsx';
 
 function App() {
