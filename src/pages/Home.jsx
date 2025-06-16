@@ -15,7 +15,7 @@ const Home = () => {
         </p>
         <Link
           to="/get-started"
-          className="bg-white text-primary font-bold py-3 px-6 rounded shadow hover:bg-gray-200"
+          className="bg-white text-primary font-bold py-3 px-6 rounded shadow hover:bg-gray-200 transition duration-200"
         >
           Request a Free Consultation
         </Link>
