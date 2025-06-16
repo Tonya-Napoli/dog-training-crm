@@ -541,6 +541,36 @@ router.get('/users', auth, async (req, res) => {
   }
 });
 
+router.get('/users/:role', auth, async (req, res) => {
+  try {
+    const { role } = req.params;
+    const users = await User.find({ role }).select('-password');
+    res.json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   GET api/auth/trainer/:trainerId/clients
+// @desc    Get clients assigned to a trainer
+// @access  Private
+router.get('/trainer/:trainerId/clients', auth, async (req, res) => {
+  try {
+    const trainer = await User.findById(req.params.trainerId)
+      .populate('clients', '-password');
+    
+    if (!trainer) {
+      return res.status(404).json({ message: 'Trainer not found' });
+    }
+    
+    res.json(trainer.clients);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 // @route   PUT api/auth/users/:id/status
 // @desc    Update user active status (admin only)
 // @access  Private (Admin)

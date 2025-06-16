@@ -1,6 +1,6 @@
 const dogDataMock = [
     {
-      dogId: 'dog1',
+      _id: 'dog1',
       name: 'Buddy',
       breed: 'Golden Retriever',
       age: 3,
@@ -19,8 +19,9 @@ const dogDataMock = [
       ],
       healthNotes: 'No known allergies, healthy weight.',
     },
-    {
-      dogId: 'dog2',
+
+    { 
+      _id: 'dog2',
       name: 'Rex',
       breed: 'German Shepherd',
       age: 5,
@@ -40,7 +41,7 @@ const dogDataMock = [
       healthNotes: 'Slight hip dysplasia, requires joint supplements.',
     },
     {
-      dogId: 'dog3',
+      _id: 'dog3',
       name: 'Max',
       breed: 'Border Collie',
       age: 2,
