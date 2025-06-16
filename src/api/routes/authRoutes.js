@@ -462,28 +462,17 @@ router.post('/register', async (req, res) => {
 // @route   POST api/auth/login
 // @desc    Authenticate user & get token
 // @access  Public
+// @route   POST api/auth/login
+// @desc    Authenticate user & get token
+// @access  Public
 router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
   try {
-    const { email, password } = req.body;
-
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ 
-        message: 'Email and password are required' 
-      });
-    }
-
     // Check if user exists
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    // Check if account is active
-    if (!user.isActive) {
-      return res.status(401).json({ 
-        message: 'Account has been deactivated. Please contact support.' 
-      });
     }
 
     // Verify password
@@ -492,23 +481,67 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Create JWT token
-    const token = await createToken(user);
+    // Create and return JWT token
+    const payload = {
+      user: {
+        id: user.id,
+        role: user.role
+      }
+    };
 
-    res.json({
-      message: 'Login successful',
-      token,
-      user: formatUserResponse(user)
-    });
-
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' },
+      (err, token) => {
+        if (err) throw err;
+        res.json({
+          token,
+          user: {
+            id: user.id,
+            username: user.username || `${user.firstName} ${user.lastName}`,
+            email: user.email,
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName
+          }
+        });
+      }
+    );
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ 
-      message: 'Server error during login',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
+    console.error(err.message);
+    res.status(500).send('Server error');
   }
 });
+
+// @route   GET api/auth/users/:role
+// @desc    Get all users by role
+// @access  Private (Admin only)
+router.get('/users/:role', auth, async (req, res) => {
+  try {
+    const { role } = req.params;
+    const users = await User.find({ role }).select('-password');
+    res.json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   GET api/auth/users/:role
+// @desc    Get all users by role
+// @access  Private (Admin only)
+router.get('/users/:role', auth, async (req, res) => {
+  try {
+    const { role } = req.params;
+    const users = await User.find({ role }).select('-password');
+    res.json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 // @route   GET api/auth/users
 // @desc    Get all users (admin only)
 // @access  Private (Admin)

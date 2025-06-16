@@ -1,46 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, user, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      switch (user.role) {
+        case 'admin':
+          navigate('/admin-dashboard');
+          break;
+        case 'trainer':
+          navigate('/trainer-dashboard');
+          break;
+        case 'client':
+          navigate('/client-dashboard');
+          break;
+        default:
+          navigate('/');
+      }
+    }
+  }, [user, navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log('🚀 Login attempt for:', email);
-    
-    setIsLoading(true);
     setError('');
+    clearError && clearError();
+    setIsLoading(true);
     
     try {
-      // Call the login function from AuthContext
+      console.log('Attempting login for:', email);
       const success = await login(email, password);
       
-      if (success) {
-        console.log('✅ Login successful!');
-        
-        // Give AuthContext a moment to set user state, then navigate based on role
-        setTimeout(() => {
-          // Get user from localStorage or make another call to check role
-          const token = localStorage.getItem('token');
-          if (token) {
-            // For now, since you're testing admin, go directly to admin dashboard
-            console.log('🎯 Navigating to admin dashboard...');
-            navigate('/admin-dashboard');
-          }
-        }, 100); // Small delay to ensure user state is set
-        
-      } else {
-        setError('Invalid email or password');
+      if (!success) {
+        setError(authError || 'Invalid email or password');
       }
+      // Navigation will be handled by useEffect if login is successful
     } catch (err) {
       console.error('Login error:', err);
-      setError('An error occurred during login');
+      setError('An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +53,7 @@ const Login = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-      <h2 className="text-3xl font-bold text-red text-heading mb-6">Login</h2>
+      <h2 className="text-3xl font-bold text-heading mb-6">Login</h2>
       <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96">
         <form onSubmit={handleLogin}>
           <div className="mb-4">
@@ -63,7 +68,7 @@ const Login = () => {
               required
               autoComplete="email"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-heading focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Enter your email"
+              disabled={isLoading}
             />
           </div>
           <div className="mb-6">
@@ -78,22 +83,29 @@ const Login = () => {
               required
               autoComplete="current-password"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-heading focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Enter your password"
+              disabled={isLoading}
             />
           </div>
-          {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
+          {(error || authError) && (
+            <p className="text-red-500 text-xs italic mb-4">{error || authError}</p>
+          )}
           <button 
             type="submit" 
+            className="bg-primary text-white font-bold py-2 px-4 rounded w-full hover:bg-blue-600 disabled:opacity-50 transition-colors"
             disabled={isLoading}
-            className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50"
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        
         <div className="mt-4 text-center">
-          <Link to="/forgot-password" className="text-link hover:text-link-hover text-sm">
+          <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
             Forgot Password?
+          </Link>
+        </div>
+        <div className="mt-2 text-center">
+          <span className="text-sm text-gray-600">Don't have an account? </span>
+          <Link to="/get-started" className="text-sm text-blue-600 hover:underline">
+            Get Started
           </Link>
         </div>
       </div>
@@ -102,7 +114,6 @@ const Login = () => {
 };
 
 export default Login;
-
 
 
 

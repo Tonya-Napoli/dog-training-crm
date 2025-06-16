@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from '../axios.js';
+import axios from '../axios.js'; // Use your configured axios instance
 
-// Create a context for authentication and role management
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -9,17 +8,15 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Check if there's a token in localStorage on initial load
   useEffect(() => {
     const checkLoggedIn = async () => {
       const token = localStorage.getItem('token');
       
       if (token) {
-        // Set auth token header
         axios.defaults.headers.common['x-auth-token'] = token;
         
         try {
-          // Verify token and get user data
+          // Use relative path since axios already has base URL
           const res = await axios.get('/auth/user');
           setUser(res.data);
         } catch (err) {
@@ -35,86 +32,58 @@ export const AuthProvider = ({ children }) => {
     checkLoggedIn();
   }, []);
 
-  // Function to handle login
   const login = async (email, password) => {
     setError(null);
     
     try {
+      // Use relative path
       const res = await axios.post('/auth/login', {
         email,
         password
       });
       
-      // Store token in localStorage
       localStorage.setItem('token', res.data.token);
-      
-      // Set axios default header
       axios.defaults.headers.common['x-auth-token'] = res.data.token;
-      
-      // Set user state
       setUser(res.data.user);
       
       console.log('User logged in:', res.data.user);
       return true;
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      setError(err.response?.data?.message || 'Login failed');
       console.error('Login error:', err.response?.data || err);
       return false;
     }
   };
 
-  // Function to handle registration
   const register = async (userData) => {
     setError(null);
     
     try {
+      // Use relative path
       const res = await axios.post('/auth/register', userData);
       
-      // Store token in localStorage
       localStorage.setItem('token', res.data.token);
-      
-      // Set axios default header
       axios.defaults.headers.common['x-auth-token'] = res.data.token;
-      
-      // Set user state
       setUser(res.data.user);
       
       console.log('User registered:', res.data.user);
       return true;
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || 'Registration failed');
       console.error('Registration error:', err.response?.data || err);
       return false;
     }
   };
 
-  // Function to handle logout
   const logout = () => {
-    // Remove token from localStorage
     localStorage.removeItem('token');
-    
-    // Remove auth header
     delete axios.defaults.headers.common['x-auth-token'];
-    
-    // Clear user state
     setUser(null);
-    
     console.log('User logged out');
   };
 
-  // Clear any errors
   const clearError = () => {
     setError(null);
-  };
-
-  // Get user role
-  const getUserRole = () => {
-    return user?.role || null;
-  };
-
-  // Check if user has a specific role
-  const hasRole = (role) => {
-    return user?.role === role;
   };
 
   return (
@@ -126,17 +95,12 @@ export const AuthProvider = ({ children }) => {
       loading,
       error,
       clearError,
-      isAuthenticated: !!user,
-      getUserRole,
-      hasRole
+      isAuthenticated: !!user 
     }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to use the AuthContext
 export const useAuth = () => useContext(AuthContext);
-
-
 
