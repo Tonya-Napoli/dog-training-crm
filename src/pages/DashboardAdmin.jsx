@@ -371,12 +371,16 @@ const DashboardAdmin = () => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-semibold">Client Management</h2>
-            <a 
-              href="/client/register" 
-              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-            >
-              Add New Client
-            </a>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-800">
+                <strong>ℹ️ Note:</strong> Clients register themselves at{' '}
+                <a href="/client/register" className="text-blue-600 underline" target="_blank">
+                  /client/register
+                </a>
+                <br />
+                <span className="text-blue-600">Your role: Assign trainers to existing clients</span>
+              </p>
+            </div>
           </div>
           
           {clientsLoading ? (
