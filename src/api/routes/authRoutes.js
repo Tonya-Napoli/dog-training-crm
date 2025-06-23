@@ -969,4 +969,106 @@ router.post('/logout', auth, (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
+// @route   PUT api/auth/trainer/:trainerId/assign-client
+// @desc    Assign a client to a trainer
+// @access  Private/Admin
+router.put('/trainer/:trainerId/assign-client', auth, async (req, res) => {
+  try {
+    const { clientId } = req.body;
+    const { trainerId } = req.params;
+
+    // Update trainer's clients array
+    const trainer = await User.findByIdAndUpdate(
+      trainerId,
+      { $addToSet: { clients: clientId } }, // $addToSet prevents duplicates
+      { new: true }
+    );
+
+    // Update client's trainer
+    const client = await User.findByIdAndUpdate(
+      clientId,
+      { trainer: trainerId },
+      { new: true }
+    );
+
+    if (!trainer || !client) {
+      return res.status(404).json({ message: 'Trainer or client not found' });
+    }
+
+    res.json({ message: 'Client assigned successfully', trainer, client });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   PUT api/auth/trainer/:trainerId/remove-client
+// @desc    Remove a client from a trainer
+// @access  Private/Admin
+router.put('/trainer/:trainerId/remove-client', auth, async (req, res) => {
+  try {
+    const { clientId } = req.body;
+    const { trainerId } = req.params;
+
+    // Remove client from trainer's array
+    const trainer = await User.findByIdAndUpdate(
+      trainerId,
+      { $pull: { clients: clientId } },
+      { new: true }
+    );
+
+    // Remove trainer from client
+    const client = await User.findByIdAndUpdate(
+      clientId,
+      { trainer: null },
+      { new: true }
+    );
+
+    res.json({ message: 'Client removed successfully', trainer, client });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   PUT api/auth/user/:userId/toggle-active
+// @desc    Activate or deactivate a user
+// @access  Private/Admin
+router.put('/user/:userId/toggle-active', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.isActive = !user.isActive;
+    await user.save();
+
+    res.json({ message: `User ${user.isActive ? 'activated' : 'deactivated'}`, user });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   GET api/auth/trainer/:trainerId/clients
+// @desc    Get all clients assigned to a trainer
+// @access  Private
+router.get('/trainer/:trainerId/clients', auth, async (req, res) => {
+  try {
+    const trainer = await User.findById(req.params.trainerId)
+      .populate('clients', '-password');
+    
+    if (!trainer) {
+      return res.status(404).json({ message: 'Trainer not found' });
+    }
+    
+    res.json(trainer.clients || []);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 export default router;

@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
-  
+
   email: {
     type: String,
     required: true,
@@ -143,6 +143,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  
   agreesToTerms: {
     type: Boolean,
     required: true,
@@ -195,7 +196,7 @@ userSchema.methods.updateLastLogin = async function() {
 };
 
 // Index for better query performance
-userSchema.index({ email: 1 });
+
 userSchema.index({ username: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
