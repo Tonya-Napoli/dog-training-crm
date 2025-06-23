@@ -2,11 +2,16 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import auth from '../middleware/auth.js';
+//import auth from '../middleware/auth.js';
+import TrainerNote from '../models/TrainerNote.js';
 
 const router = express.Router();
 
-// Helper function to create JWT token
+// ======================
+// Helper Functions
+// ======================
+
+// Create JWT token
 const createToken = (user) => {
   const payload = {
     user: {
@@ -28,10 +33,10 @@ const createToken = (user) => {
   });
 };
 
-// Helper function to format user response
+// Format user response
 const formatUserResponse = (user) => ({
   id: user.id,
-  _id: user._id, // Include both for compatibility
+  _id: user._id,
   firstName: user.firstName,
   lastName: user.lastName,
   fullName: `${user.firstName} ${user.lastName}`,
@@ -53,8 +58,13 @@ const formatUserResponse = (user) => ({
   dogBreed: user.dogBreed,
   dogAge: user.dogAge,
   trainingGoals: user.trainingGoals,
-  assignedTrainer: user.assignedTrainer,
+  trainer: user.trainer,
+  // Admin fields
+  accessLevel: user.accessLevel,
+  // Relationships
+  clients: user.clients,
   // Timestamps
+  created: user.created,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt
 });
@@ -62,7 +72,6 @@ const formatUserResponse = (user) => ({
 // Admin auth middleware
 const adminAuth = async (req, res, next) => {
   try {
-    // First check if user is authenticated
     const token = req.header('x-auth-token');
     if (!token) {
       return res.status(401).json({ message: 'No token, authorization denied' });
@@ -79,13 +88,17 @@ const adminAuth = async (req, res, next) => {
       return res.status(403).json({ message: 'Admin access required' });
     }
 
-    req.user = user;
+    req.user = decoded.user;
     next();
   } catch (err) {
     console.error('Admin auth error:', err);
     res.status(401).json({ message: 'Token is not valid' });
   }
 };
+
+// ======================
+// Registration Routes
+// ======================
 
 // @route   POST api/auth/register-trainer
 // @desc    Register a trainer with all trainer-specific fields
@@ -96,6 +109,7 @@ router.post('/register-trainer', async (req, res) => {
       firstName, 
       lastName, 
       email, 
+      phone, 
       password,
       specialties,
       certification,
@@ -149,7 +163,7 @@ router.post('/register-trainer', async (req, res) => {
       });
     }
 
-    // Validate availability (at least one day selected)
+    // Validate availability
     const hasAvailability = availability && Object.values(availability).some(day => day === true);
     if (!hasAvailability) {
       return res.status(400).json({ 
@@ -157,7 +171,7 @@ router.post('/register-trainer', async (req, res) => {
       });
     }
 
-    // Check if user already exists
+    // Check if user exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ message: 'User with this email already exists' });
@@ -168,7 +182,7 @@ router.post('/register-trainer', async (req, res) => {
     let username = baseUsername;
     let counter = 1;
     
-    while (await User.findOne({ username: username })) {
+    while (await User.findOne({ username })) {
       username = `${baseUsername}${counter}`;
       counter++;
     }
@@ -177,8 +191,9 @@ router.post('/register-trainer', async (req, res) => {
     const newTrainer = new User({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      username: username,
+      username,
       email: email.toLowerCase().trim(),
+      phone: phone?.trim(),
       password,
       role: 'trainer',
       specialties,
@@ -196,10 +211,7 @@ router.post('/register-trainer', async (req, res) => {
     // Create JWT token
     const token = await createToken(newTrainer);
 
-    // Log registration for audit
     console.log(`New trainer registered: ${email}`);
-    console.log(`Specialties: ${specialties.join(', ')}`);
-    console.log(`Experience: ${experience}, Rate: ${hourlyRate}/hr`);
 
     res.status(201).json({
       message: 'Trainer registration successful',
@@ -212,16 +224,11 @@ router.post('/register-trainer', async (req, res) => {
     
     if (err.name === 'ValidationError') {
       const errors = Object.values(err.errors).map(e => e.message);
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors 
-      });
+      return res.status(400).json({ message: 'Validation failed', errors });
     }
 
     if (err.code === 11000) {
-      return res.status(400).json({ 
-        message: 'Email already registered' 
-      });
+      return res.status(400).json({ message: 'Email already registered' });
     }
 
     res.status(500).json({ 
@@ -232,7 +239,7 @@ router.post('/register-trainer', async (req, res) => {
 });
 
 // @route   POST api/auth/register-client
-// @desc    Register a client with dog information and training goals
+// @desc    Register a client with dog information
 // @access  Public
 router.post('/register-client', async (req, res) => {
   try {
@@ -257,15 +264,11 @@ router.post('/register-client', async (req, res) => {
     }
 
     if (!phone) {
-      return res.status(400).json({ 
-        message: 'Phone number is required' 
-      });
+      return res.status(400).json({ message: 'Phone number is required' });
     }
 
     if (!address || !address.street || !address.city || !address.state || !address.zipCode) {
-      return res.status(400).json({ 
-        message: 'Complete address is required' 
-      });
+      return res.status(400).json({ message: 'Complete address is required' });
     }
 
     if (!dogName || !dogBreed || !dogAge) {
@@ -280,14 +283,7 @@ router.post('/register-client', async (req, res) => {
       });
     }
 
-    // Password validation
-    if (password.length < 8) {
-      return res.status(400).json({ 
-        message: 'Password must be at least 8 characters long' 
-      });
-    }
-
-    // Check if user already exists
+    // Check if user exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ message: 'User with this email already exists' });
@@ -298,7 +294,7 @@ router.post('/register-client', async (req, res) => {
     let username = baseUsername;
     let counter = 1;
     
-    while (await User.findOne({ username: username })) {
+    while (await User.findOne({ username })) {
       username = `${baseUsername}${counter}`;
       counter++;
     }
@@ -307,7 +303,7 @@ router.post('/register-client', async (req, res) => {
     const newClient = new User({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      username: username,
+      username,
       email: email.toLowerCase().trim(),
       password,
       role: 'client',
@@ -321,7 +317,7 @@ router.post('/register-client', async (req, res) => {
       dogName: dogName.trim(),
       dogBreed: dogBreed.trim(),
       dogAge: dogAge.trim(),
-      trainingGoals: trainingGoals,
+      trainingGoals,
       isActive: true,
       agreesToTerms: true
     });
@@ -331,20 +327,12 @@ router.post('/register-client', async (req, res) => {
     // Create JWT token
     const token = await createToken(newClient);
 
-    // Log registration for audit
-    console.log(`New client registered: ${email} - Dog: ${dogName} (${dogBreed})`);
-    console.log(`Training goals: ${trainingGoals.join(', ')}`);
+    console.log(`New client registered: ${email}`);
 
     res.status(201).json({
       message: 'Client registration successful',
       token,
-      user: formatUserResponse(newClient),
-      dogInfo: {
-        name: dogName,
-        breed: dogBreed,
-        age: dogAge,
-        trainingGoals
-      }
+      user: formatUserResponse(newClient)
     });
 
   } catch (err) {
@@ -352,16 +340,11 @@ router.post('/register-client', async (req, res) => {
     
     if (err.name === 'ValidationError') {
       const errors = Object.values(err.errors).map(e => e.message);
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors 
-      });
+      return res.status(400).json({ message: 'Validation failed', errors });
     }
 
     if (err.code === 11000) {
-      return res.status(400).json({ 
-        message: 'Email already registered' 
-      });
+      return res.status(400).json({ message: 'Email already registered' });
     }
 
     res.status(500).json({ 
@@ -372,96 +355,46 @@ router.post('/register-client', async (req, res) => {
 });
 
 // @route   POST api/auth/register
-// @desc    General registration endpoint (maintains compatibility)
+// @desc    General registration endpoint
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
-    const { 
-      firstName, 
-      lastName, 
-      email, 
+    const { email, password, username, role = 'client' } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    user = new User({
+      username: username || email.split('@')[0],
+      email,
       password,
-      role = 'client',
-      username,
-      agreesToTerms = true
-    } = req.body;
-
-    // Validate required fields
-    if (!firstName || !lastName || !email || !password) {
-      return res.status(400).json({ 
-        message: 'First name, last name, email, and password are required' 
-      });
-    }
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User with this email already exists' });
-    }
-
-    // Generate username if not provided
-    let finalUsername = username;
-    if (!finalUsername) {
-      const baseUsername = email.split('@')[0].toLowerCase();
-      finalUsername = baseUsername;
-      let counter = 1;
-      
-      while (await User.findOne({ username: finalUsername })) {
-        finalUsername = `${baseUsername}${counter}`;
-        counter++;
-      }
-    }
-
-    // Create new user
-    const newUser = new User({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      username: finalUsername,
-      email: email.toLowerCase().trim(),
-      password,
-      role,
-      agreesToTerms,
-      isActive: true
+      role
     });
 
-    await newUser.save();
+    await user.save();
 
-    // Create JWT token
-    const token = await createToken(newUser);
+    const token = await createToken(user);
 
-    res.status(201).json({
-      message: 'Registration successful',
+    res.json({
       token,
-      user: formatUserResponse(newUser)
+      user: formatUserResponse(user)
     });
-
   } catch (err) {
-    console.error('Registration error:', err);
-    
-    if (err.name === 'ValidationError') {
-      const errors = Object.values(err.errors).map(e => e.message);
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors 
-      });
-    }
-
-    if (err.code === 11000) {
-      return res.status(400).json({ 
-        message: 'Email or username already registered' 
-      });
-    }
-
-    res.status(500).json({ 
-      message: 'Server error during registration',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
+    console.error(err.message);
+    res.status(500).send('Server error');
   }
 });
 
-// @route   POST api/auth/login
-// @desc    Authenticate user & get token
-// @access  Public
+// ======================
+// Authentication Routes
+// ======================
+
 // @route   POST api/auth/login
 // @desc    Authenticate user & get token
 // @access  Public
@@ -469,55 +402,56 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Create and return JWT token
-    const payload = {
+    const token = await createToken(user);
+
+    res.json({
+      token,
       user: {
         id: user.id,
-        role: user.role
+        username: user.username || `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName
       }
-    };
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({
-          token,
-          user: {
-            id: user.id,
-            username: user.username || `${user.firstName} ${user.lastName}`,
-            email: user.email,
-            role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName
-          }
-        });
-      }
-    );
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
 });
 
+// @route   GET api/auth/user
+// @desc    Get logged in user
+// @access  Private
+router.get('/user', adminAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// ======================
+// User Management Routes
+// ======================
+
 // @route   GET api/auth/users/:role
 // @desc    Get all users by role
 // @access  Private (Admin only)
-router.get('/users/:role', auth, async (req, res) => {
+router.get('/users/:role', adminAuth, async (req, res) => {
   try {
     const { role } = req.params;
     const users = await User.find({ role }).select('-password');
@@ -528,67 +462,35 @@ router.get('/users/:role', auth, async (req, res) => {
   }
 });
 
-// @route   GET api/auth/users/:role
-// @desc    Get all users by role
-// @access  Private (Admin only)
-router.get('/users/:role', auth, async (req, res) => {
+// @route   PUT api/auth/user/:userId/toggle-active
+// @desc    Toggle user active status
+// @access  Private/Admin
+router.put('/user/:userId/toggle-active', adminAuth, async (req, res) => {
   try {
-    const { role } = req.params;
-    const users = await User.find({ role }).select('-password');
-    res.json(users);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
-
-// @route   GET api/auth/users
-// @desc    Get all users (admin only)
-// @access  Private (Admin)
-router.get('/users', auth, async (req, res) => {
-  try {
-    const { role, search } = req.query;
+    const user = await User.findById(req.params.userId);
     
-    // Build query
-    let query = {};
-    if (role) {
-      query.role = role;
-    }
-    if (search) {
-      query.$or = [
-        { firstName: { $regex: search, $options: 'i' } },
-        { lastName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get users (excluding passwords)
-    const users = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 });
+    user.isActive = !user.isActive;
+    await user.save();
 
-    res.json({ users });
+    res.json({ message: `User ${user.isActive ? 'activated' : 'deactivated'}`, user });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
 });
 
-router.get('/users/:role', auth, async (req, res) => {
-  try {
-    const { role } = req.params;
-    const users = await User.find({ role }).select('-password');
-    res.json(users);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
+// ======================
+// Trainer Management Routes
+// ======================
 
 // @route   GET api/auth/trainer/:trainerId/clients
 // @desc    Get clients assigned to a trainer
 // @access  Private
-router.get('/trainer/:trainerId/clients', auth, async (req, res) => {
+router.get('/trainer/:trainerId/clients', adminAuth, async (req, res) => {
   try {
     const trainer = await User.findById(req.params.trainerId)
       .populate('clients', '-password');
@@ -597,394 +499,27 @@ router.get('/trainer/:trainerId/clients', auth, async (req, res) => {
       return res.status(404).json({ message: 'Trainer not found' });
     }
     
-    res.json(trainer.clients);
+    res.json(trainer.clients || []);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
-});
-
-// @route   PUT api/auth/users/:id/status
-// @desc    Update user active status (admin only)
-// @access  Private (Admin)
-router.put('/users/:id/status', auth, async (req, res) => {
-  try {
-    const { isActive } = req.body;
-    
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { isActive },
-      { new: true }
-    ).select('-password');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
-
-
-// @route   GET api/auth/user
-// @desc    Get logged in user
-// @access  Private
-router.get('/user', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (!user.isActive) {
-      return res.status(401).json({ 
-        message: 'Account has been deactivated' 
-      });
-    }
-
-    res.json(formatUserResponse(user));
-  } catch (err) {
-    console.error('Get user error:', err);
-    res.status(500).json({ 
-      message: 'Server error while fetching user data',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
-  }
-});
-
-// @route   GET api/auth/users
-// @desc    Get users by role (for admin dashboard)
-// @access  Private (Admin only)
-router.get('/users', adminAuth, async (req, res) => {
-  try {
-    const { role, search, page = 1, limit = 100 } = req.query;
-    
-    // Build query
-    let query = {};
-    
-    // Filter by role if specified
-    if (role && ['client', 'trainer', 'admin'].includes(role)) {
-      query.role = role;
-    }
-    
-    // Add search functionality
-    if (search) {
-      query.$or = [
-        { firstName: { $regex: search, $options: 'i' } },
-        { lastName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
-    }
-    
-    // Fetch users with populated trainer info for clients
-    const users = await User.find(query)
-      .select('-password')
-      .populate('assignedTrainer', 'firstName lastName email')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    const total = await User.countDocuments(query);
-
-    res.json({
-      users: users.map(formatUserResponse),
-      total,
-      page: parseInt(page),
-      totalPages: Math.ceil(total / limit)
-    });
-
-  } catch (err) {
-    console.error('Error fetching users:', err);
-    res.status(500).json({ 
-      message: 'Server error while fetching users',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
-  }
-});
-
-// @route   PUT api/auth/users/:id/assign-trainer
-// @desc    Assign a trainer to a client
-// @access  Private (Admin only)
-router.put('/users/:id/assign-trainer', adminAuth, async (req, res) => {
-  try {
-    const { trainerId } = req.body;
-    const clientId = req.params.id;
-
-    // Validate that the client exists and is a client
-    const client = await User.findById(clientId);
-    if (!client) {
-      return res.status(404).json({ message: 'Client not found' });
-    }
-
-    if (client.role !== 'client') {
-      return res.status(400).json({ message: 'User is not a client' });
-    }
-
-    // If trainerId is provided, validate that the trainer exists and is a trainer
-    if (trainerId) {
-      const trainer = await User.findById(trainerId);
-      if (!trainer) {
-        return res.status(404).json({ message: 'Trainer not found' });
-      }
-
-      if (trainer.role !== 'trainer') {
-        return res.status(400).json({ message: 'User is not a trainer' });
-      }
-
-      if (!trainer.isActive) {
-        return res.status(400).json({ message: 'Trainer is not active' });
-      }
-    }
-
-    // Update the client's assigned trainer
-    const updatedClient = await User.findByIdAndUpdate(
-      clientId,
-      { 
-        assignedTrainer: trainerId || null,
-        updatedAt: new Date()
-      },
-      { new: true }
-    ).populate('assignedTrainer', 'firstName lastName email');
-
-    // Log the assignment
-    if (trainerId) {
-      console.log(`Client ${client.email} assigned to trainer ${trainerId} by admin ${req.user.email}`);
-    } else {
-      console.log(`Client ${client.email} unassigned from trainer by admin ${req.user.email}`);
-    }
-
-    res.json({
-      message: trainerId ? 'Trainer assigned successfully' : 'Trainer unassigned successfully',
-      client: formatUserResponse(updatedClient)
-    });
-
-  } catch (err) {
-    console.error('Error assigning trainer:', err);
-    res.status(500).json({ 
-      message: 'Server error while assigning trainer',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
-  }
-});
-
-// @route   PUT api/auth/users/:id/status
-// @desc    Update user status (activate/deactivate)
-// @access  Private (Admin only)
-router.put('/users/:id/status', adminAuth, async (req, res) => {
-  try {
-    const { isActive } = req.body;
-    const userId = req.params.id;
-
-    if (typeof isActive !== 'boolean') {
-      return res.status(400).json({ 
-        message: 'isActive must be true or false' 
-      });
-    }
-
-    // Prevent admin from deactivating themselves
-    if (userId === req.user.id && !isActive) {
-      return res.status(400).json({ 
-        message: 'You cannot deactivate your own account' 
-      });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { isActive, updatedAt: new Date() },
-      { new: true }
-    ).select('-password');
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    console.log(`User ${user.email} ${isActive ? 'activated' : 'deactivated'} by admin ${req.user.email}`);
-
-    res.json({
-      message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
-      user: formatUserResponse(user)
-    });
-
-  } catch (err) {
-    console.error('Error updating user status:', err);
-    res.status(500).json({ 
-      message: 'Server error while updating user status',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
-  }
-});
-
-// @route   POST api/auth/create-admin
-// @desc    Create a new admin account (admin-only) - for CreateAdminForm
-// @access  Private (Admin only)
-router.post('/create-admin', adminAuth, async (req, res) => {
-  try {
-    const { 
-      firstName, 
-      lastName, 
-      email, 
-      password, 
-      accessLevel = 'full'
-    } = req.body;
-
-    // Validate required fields
-    if (!firstName || !lastName || !email || !password) {
-      return res.status(400).json({ 
-        message: 'First name, last name, email, and password are required' 
-      });
-    }
-
-    // Password validation
-    if (password.length < 8) {
-      return res.status(400).json({ 
-        message: 'Password must be at least 8 characters long' 
-      });
-    }
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User with this email already exists' });
-    }
-
-    // Generate username
-    const baseUsername = 'admin';
-    let username = baseUsername;
-    let counter = 1;
-    
-    while (await User.findOne({ username: username })) {
-      username = `${baseUsername}${counter}`;
-      counter++;
-    }
-
-    // Create new admin user
-    const newAdmin = new User({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      username: username,
-      email: email.toLowerCase().trim(),
-      password,
-      role: 'admin',
-      accessLevel,
-      agreesToTerms: true,
-      isActive: true
-    });
-
-    await newAdmin.save();
-
-    console.log(`New admin account created: ${email} by ${req.user.email}`);
-
-    res.status(201).json({
-      message: 'Admin account created successfully',
-      admin: formatUserResponse(newAdmin)
-    });
-
-  } catch (err) {
-    console.error('Error creating admin account:', err);
-    
-    if (err.code === 11000) {
-      return res.status(400).json({ 
-        message: 'Email already registered' 
-      });
-    }
-
-    res.status(500).json({ 
-      message: 'Server error while creating admin account',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
-  }
-});
-
-// @route   GET api/auth/trainers
-// @desc    Get all trainers with client assignments
-// @access  Private (Admin only)
-router.get('/trainers', adminAuth, async (req, res) => {
-  try {
-    const trainers = await User.find({ role: 'trainer' })
-      .select('-password')
-      .sort({ createdAt: -1 });
-
-    // Get client counts for each trainer
-    const trainersWithStats = await Promise.all(
-      trainers.map(async (trainer) => {
-        const clientCount = await User.countDocuments({ 
-          role: 'client', 
-          assignedTrainer: trainer._id 
-        });
-        
-        return {
-          ...formatUserResponse(trainer),
-          clientCount
-        };
-      })
-    );
-
-    res.json({
-      trainers: trainersWithStats,
-      total: trainers.length
-    });
-
-  } catch (err) {
-    console.error('Error fetching trainers:', err);
-    res.status(500).json({ 
-      message: 'Server error while fetching trainers',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
-  }
-});
-
-// @route   GET api/auth/clients
-// @desc    Get all clients with trainer assignments
-// @access  Private (Admin only)
-router.get('/clients', adminAuth, async (req, res) => {
-  try {
-    const clients = await User.find({ role: 'client' })
-      .select('-password')
-      .populate('assignedTrainer', 'firstName lastName email')
-      .sort({ createdAt: -1 });
-
-    res.json({
-      clients: clients.map(formatUserResponse),
-      total: clients.length
-    });
-
-  } catch (err) {
-    console.error('Error fetching clients:', err);
-    res.status(500).json({ 
-      message: 'Server error while fetching clients',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
-  }
-});
-
-// @route   POST api/auth/logout
-// @desc    Logout user (client-side token removal)
-// @access  Private
-router.post('/logout', auth, (req, res) => {
-  console.log(`User logged out`);
-  res.json({ message: 'Logged out successfully' });
 });
 
 // @route   PUT api/auth/trainer/:trainerId/assign-client
 // @desc    Assign a client to a trainer
 // @access  Private/Admin
-router.put('/trainer/:trainerId/assign-client', auth, async (req, res) => {
+router.put('/trainer/:trainerId/assign-client', adminAuth, async (req, res) => {
   try {
     const { clientId } = req.body;
     const { trainerId } = req.params;
 
-    // Update trainer's clients array
     const trainer = await User.findByIdAndUpdate(
       trainerId,
-      { $addToSet: { clients: clientId } }, // $addToSet prevents duplicates
+      { $addToSet: { clients: clientId } },
       { new: true }
     );
 
-    // Update client's trainer
     const client = await User.findByIdAndUpdate(
       clientId,
       { trainer: trainerId },
@@ -1005,19 +540,17 @@ router.put('/trainer/:trainerId/assign-client', auth, async (req, res) => {
 // @route   PUT api/auth/trainer/:trainerId/remove-client
 // @desc    Remove a client from a trainer
 // @access  Private/Admin
-router.put('/trainer/:trainerId/remove-client', auth, async (req, res) => {
+router.put('/trainer/:trainerId/remove-client', adminAuth, async (req, res) => {
   try {
     const { clientId } = req.body;
     const { trainerId } = req.params;
 
-    // Remove client from trainer's array
     const trainer = await User.findByIdAndUpdate(
       trainerId,
       { $pull: { clients: clientId } },
       { new: true }
     );
 
-    // Remove trainer from client
     const client = await User.findByIdAndUpdate(
       clientId,
       { trainer: null },
@@ -1031,40 +564,51 @@ router.put('/trainer/:trainerId/remove-client', auth, async (req, res) => {
   }
 });
 
-// @route   PUT api/auth/user/:userId/toggle-active
-// @desc    Activate or deactivate a user
+// ======================
+// Trainer Notes Routes
+// ======================
+
+// @route   POST api/auth/trainer/:trainerId/notes
+// @desc    Add a note about a trainer
 // @access  Private/Admin
-router.put('/user/:userId/toggle-active', auth, async (req, res) => {
+router.post('/trainer/:trainerId/notes', adminAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    const { subject, content, category } = req.body;
+    const { trainerId } = req.params;
 
-    user.isActive = !user.isActive;
-    await user.save();
+    const newNote = new TrainerNote({
+      trainer: trainerId,
+      author: req.user.id,
+      subject,
+      content,
+      category
+    });
 
-    res.json({ message: `User ${user.isActive ? 'activated' : 'deactivated'}`, user });
+    await newNote.save();
+
+    await User.findByIdAndUpdate(trainerId, {
+      $push: { adminNotes: newNote._id }
+    });
+
+    await newNote.populate('author', 'firstName lastName');
+
+    res.json(newNote);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
 });
 
-// @route   GET api/auth/trainer/:trainerId/clients
-// @desc    Get all clients assigned to a trainer
-// @access  Private
-router.get('/trainer/:trainerId/clients', auth, async (req, res) => {
+// @route   GET api/auth/trainer/:trainerId/notes
+// @desc    Get all notes for a trainer
+// @access  Private/Admin
+router.get('/trainer/:trainerId/notes', adminAuth, async (req, res) => {
   try {
-    const trainer = await User.findById(req.params.trainerId)
-      .populate('clients', '-password');
-    
-    if (!trainer) {
-      return res.status(404).json({ message: 'Trainer not found' });
-    }
-    
-    res.json(trainer.clients || []);
+    const notes = await TrainerNote.find({ trainer: req.params.trainerId })
+      .populate('author', 'firstName lastName')
+      .sort({ createdAt: -1 });
+
+    res.json(notes);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
