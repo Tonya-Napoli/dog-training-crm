@@ -1,4 +1,3 @@
-// src/components/admin/ManageTrainers.jsx
 import React, { useState, useEffect } from 'react';
 import axios from '../../axios';
 
@@ -11,6 +10,30 @@ const ManageTrainers = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedTrainer, setSelectedTrainer] = useState(null);
   const [selectedClients, setSelectedClients] = useState([]);
+
+  // Specialty labels mapping for better display
+  const specialtyLabels = {
+    basicObedience: 'Basic Obedience',
+    puppyTraining: 'Puppy Training',
+    behaviorModification: 'Behavior Modification',
+    aggressionManagement: 'Aggression Management',
+    anxietyReduction: 'Anxiety Reduction',
+    serviceAnimal: 'Service Animal Training',
+    leashManners: 'Leash Manners',
+    houseTraining: 'House Training',
+    socialization: 'Socialization',
+    tricks: 'Trick Training',
+    agilityTraining: 'Agility Training',
+    therapyDog: 'Therapy Dog Training',
+    competitionTraining: 'Competition Training',
+    searchAndRescue: 'Search and Rescue',
+    protectionTraining: 'Protection Training',
+    fearRehabiliation: 'Fear Rehabilitation',
+    reactiveeDogTraining: 'Reactive Dog Training',
+    puppySocialization: 'Puppy Socialization',
+    advancedObedience: 'Advanced Obedience',
+    sportDogTraining: 'Sport Dog Training'
+  };
 
   useEffect(() => {
     fetchData();
@@ -110,6 +133,21 @@ const ManageTrainers = () => {
     }
   };
 
+  // Helper function to format availability
+  const formatAvailability = (availability) => {
+    if (!availability) return 'Not specified';
+    const days = Object.entries(availability)
+      .filter(([day, available]) => available)
+      .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1));
+    return days.length > 0 ? days.join(', ') : 'No days specified';
+  };
+
+  // Helper function to format specialties
+  const formatSpecialties = (specialties) => {
+    if (!specialties || specialties.length === 0) return 'Not specified';
+    return specialties.map(s => specialtyLabels[s] || s).join(', ');
+  };
+
   if (loading) return <div>Loading trainers...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
@@ -136,7 +174,13 @@ const ManageTrainers = () => {
                     </span>
                   </h3>
                   <p className="text-gray-600">{trainer.email}</p>
-                  <p className="text-gray-600">{trainer.phone || 'No phone'}</p>
+                  <p className="text-gray-600">Phone: {trainer.phone || 'Not provided'}</p>
+                  
+                  {/* Quick preview info */}
+                  <div className="mt-2 text-sm text-gray-500">
+                    {trainer.experience && <span>Experience: {trainer.experience} • </span>}
+                    {trainer.hourlyRate && <span>Rate: ${trainer.hourlyRate}/hour</span>}
+                  </div>
                 </div>
                 
                 <div className="flex space-x-2">
@@ -170,18 +214,74 @@ const ManageTrainers = () => {
               {/* Expanded Details */}
               {expandedTrainer === trainer._id && (
                 <div className="mt-4 pt-4 border-t">
-                  <h4 className="font-semibold mb-2">Assigned Clients:</h4>
-                  {trainer.assignedClients && trainer.assignedClients.length > 0 ? (
-                    <ul className="list-disc list-inside">
-                      {trainer.assignedClients.map(client => (
-                        <li key={client._id}>
-                          {client.firstName} {client.lastName} - {client.email}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-500">No clients assigned</p>
-                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Trainer Information Column */}
+                    <div>
+                      <h4 className="font-semibold mb-3 text-gray-700">Trainer Information:</h4>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="font-semibold text-gray-600">Specialties:</span>
+                          <p className="text-gray-800">{formatSpecialties(trainer.specialties)}</p>
+                        </div>
+                        
+                        {trainer.certifications && trainer.certifications.length > 0 && (
+                          <div>
+                            <span className="font-semibold text-gray-600">Certifications:</span>
+                            <p className="text-gray-800">{trainer.certifications.join(', ')}</p>
+                          </div>
+                        )}
+                        
+                        {trainer.experience && (
+                          <div>
+                            <span className="font-semibold text-gray-600">Experience:</span>
+                            <p className="text-gray-800">{trainer.experience}</p>
+                          </div>
+                        )}
+                        
+                        <div>
+                          <span className="font-semibold text-gray-600">Availability:</span>
+                          <p className="text-gray-800">{formatAvailability(trainer.availability)}</p>
+                        </div>
+                        
+                        {trainer.hourlyRate && (
+                          <div>
+                            <span className="font-semibold text-gray-600">Hourly Rate:</span>
+                            <p className="text-gray-800">${trainer.hourlyRate}/hour</p>
+                          </div>
+                        )}
+                        
+                        <div>
+                          <span className="font-semibold text-gray-600">Member Since:</span>
+                          <p className="text-gray-800">{new Date(trainer.created).toLocaleDateString()}</p>
+                        </div>
+                        
+                        {trainer.bio && (
+                          <div className="mt-3">
+                            <span className="font-semibold text-gray-600">Bio:</span>
+                            <p className="text-gray-800 mt-1">{trainer.bio}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Assigned Clients Column */}
+                    <div>
+                      <h4 className="font-semibold mb-3 text-gray-700">Assigned Clients:</h4>
+                      {trainer.assignedClients && trainer.assignedClients.length > 0 ? (
+                        <ul className="space-y-2">
+                          {trainer.assignedClients.map(client => (
+                            <li key={client._id} className="text-sm">
+                              <span className="font-medium">{client.firstName} {client.lastName}</span>
+                              <span className="text-gray-600"> - {client.email}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No clients assigned</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
