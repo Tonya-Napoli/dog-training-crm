@@ -10,6 +10,7 @@ const TrainerForm = () => {
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     specialties: [],
@@ -73,11 +74,38 @@ const TrainerForm = () => {
     { key: 'sunday', label: 'Sun' }
   ];
 
+  // Format phone number as user types
+  const formatPhoneNumber = (value) => {
+    // Remove all non-digits
+    const phoneNumber = value.replace(/\D/g, '');
+    
+    // Limit to 10 digits
+    const truncated = phoneNumber.slice(0, 10);
+    
+    // Format as (xxx) xxx-xxxx
+    if (truncated.length === 0) {
+      return '';
+    } else if (truncated.length <= 3) {
+      return truncated;
+    } else if (truncated.length <= 6) {
+      return `(${truncated.slice(0, 3)}) ${truncated.slice(3)}`;
+    } else {
+      return `(${truncated.slice(0, 3)}) ${truncated.slice(3, 6)}-${truncated.slice(6)}`;
+    }
+  };
+
   // Handle form field changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    if (name.startsWith('availability.')) {
+    // Handle phone number formatting
+    if (name === 'phone') {
+      const formattedPhone = formatPhoneNumber(value);
+      setFormData(prevData => ({
+        ...prevData,
+        phone: formattedPhone
+      }));
+    } else if (name.startsWith('availability.')) {
       const day = name.split('.')[1];
       setFormData(prevData => ({
         ...prevData,
@@ -154,6 +182,18 @@ const TrainerForm = () => {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       tempErrors.email = "Please enter a valid email address";
       isValid = false;
+    }
+
+    if (!formData.phone?.trim()) {
+      tempErrors.phone = "Phone number is required";
+      isValid = false;
+    } else {
+      // Check if phone has 10 digits (excluding formatting)
+      const digitsOnly = formData.phone.replace(/\D/g, '');
+      if (digitsOnly.length !== 10) {
+        tempErrors.phone = "Please enter a valid 10-digit phone number";
+        isValid = false;
+      }
     }
 
     // Password validation
@@ -248,6 +288,7 @@ const TrainerForm = () => {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(), // Added phone here
         password: formData.password,
         specialties: formData.specialties,
         certification: formData.certification,
@@ -289,6 +330,7 @@ const TrainerForm = () => {
           firstName: '',
           lastName: '',
           email: '',
+          phone: '',
           password: '',
           confirmPassword: '',
           specialties: [],
@@ -430,6 +472,24 @@ const TrainerForm = () => {
                 placeholder="your.email@example.com"
               />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.phone ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="(555) 123-4567"
+              />
+              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
             </div>
             
             <div>
