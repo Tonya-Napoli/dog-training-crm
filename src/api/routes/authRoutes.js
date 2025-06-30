@@ -100,9 +100,9 @@ const adminAuth = async (req, res, next) => {
 // Registration Routes
 // ======================
 
-// @route   POST api/auth/register-trainer
-// @desc    Register a trainer with all trainer-specific fields
-// @access  Public
+// @route   POST api/auth/admin-register-client
+// @desc    Admin registers a client manually
+// @access  Private (Admin only)
 router.post('/admin-register-client', auth, async (req, res) => {
   try {
     // Verify admin role
@@ -118,9 +118,18 @@ router.post('/admin-register-client', auth, async (req, res) => {
       phone,
       address,
       dogName,
+      dogBreed,
+      dogAge,
       sendWelcomeEmail,
       notes
     } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ 
+        message: 'First name, last name, email, and password are required' 
+      });
+    }
 
     // Check if user already exists
     let user = await User.findOne({ email });
@@ -130,62 +139,50 @@ router.post('/admin-register-client', auth, async (req, res) => {
 
     // Create new user
     user = new User({
-      username: email.split('@')[0], // Generate username from email
+      username: email.split('@')[0],
       firstName,
       lastName,
       email,
-      password, // Will be hashed by pre-save hook
+      password,
       phone,
       address,
       role: 'client',
-      metadata: {
-        registeredBy: req.user.id,
-        registrationMethod: 'admin',
-        registrationNotes: notes,
-        temporaryPassword: true // Flag to prompt password change on first login
-      }
+      isActive: true,
+      agreesToTerms: true,
+      // Store dog info if provided
+      dogName,
+      dogBreed,
+      dogAge
     });
 
     await user.save();
 
-    // If dog info provided, store it in user metadata for now
-    // (You can create a proper Dog model later)
-    if (dogName) {
-      user.metadata.tempDogInfo = {
-        name: dogName,
-        breed: req.body.dogBreed,
-        age: req.body.dogAge
-      };
-      await user.save();
-    }
-
     // Send welcome email if requested
-    if (sendWelcomeEmail) {
-      // Import SendGrid at the top of your authRoutes.js file if not already there
-      const msg = {
-        to: email,
-        from: 'info@puppyprostraining.com',
-        subject: 'Welcome to Puppy Pros Training',
-        html: `
-          <h2>Welcome to Puppy Pros Training!</h2>
-          <p>Dear ${firstName},</p>
-          <p>An account has been created for you by our staff.</p>
-          <p><strong>Login Details:</strong></p>
-          <p>Email: ${email}</p>
-          <p>Temporary Password: ${password}</p>
-          <p>Please log in and change your password at your earliest convenience.</p>
-          <p>Login at: <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login">Login Here</a></p>
-          <p>Best regards,<br>Puppy Pros Training Team</p>
-        `,
-      };
-      
+    if (sendWelcomeEmail && process.env.SENDGRID_API_KEY) {
       try {
         const sgMail = await import('@sendgrid/mail');
         sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
+        
+        const msg = {
+          to: email,
+          from: 'info@puppyprostraining.com',
+          subject: 'Welcome to Puppy Pros Training',
+          html: `
+            <h2>Welcome to Puppy Pros Training!</h2>
+            <p>Dear ${firstName},</p>
+            <p>An account has been created for you by our staff.</p>
+            <p><strong>Login Details:</strong></p>
+            <p>Email: ${email}</p>
+            <p>Temporary Password: ${password}</p>
+            <p>Please log in and change your password at your earliest convenience.</p>
+            <p>Login at: <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login">Login Here</a></p>
+            <p>Best regards,<br>Puppy Pros Training Team</p>
+          `,
+        };
+        
         await sgMail.default.send(msg);
       } catch (emailError) {
         console.error('Failed to send welcome email:', emailError);
-        // Continue with registration even if email fails
       }
     }
 
@@ -204,6 +201,9 @@ router.post('/admin-register-client', auth, async (req, res) => {
   }
 });
 
+// @route   POST api/auth/register-trainer
+// @desc    Register a trainer with all trainer-specific fields
+// @access  Public
 router.post('/register-trainer', async (req, res) => {
   try {
     const { 
@@ -535,13 +535,156 @@ router.post('/login', async (req, res) => {
 // @route   GET api/auth/user
 // @desc    Get logged in user
 // @access  Private
-router.get('/user', adminAuth, async (req, res) => {
+router.get('/user', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
+  }
+});
+
+// ======================
+// Admin Dashboard Routes (NEW)
+// ======================
+
+// @route   GET api/auth/clients
+// @desc    Get all clients with search and filter
+// @access  Private (Admin only)
+router.get('/clients', auth, async (req, res) => {
+  try {
+    // Verify admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const { search } = req.query;
+    let query = { role: 'client' };
+    
+    // Add search functionality
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const clients = await User.find(query)
+      .select('-password')
+      .populate('trainer', 'firstName lastName email')
+      .sort({ created: -1 });
+
+    res.json({ clients });
+  } catch (err) {
+    console.error('Error fetching clients:', err);
+    res.status(500).json({ message: 'Failed to fetch clients' });
+  }
+});
+
+// @route   GET api/auth/trainers
+// @desc    Get all trainers
+// @access  Private (Admin only)
+router.get('/trainers', auth, async (req, res) => {
+  try {
+    // Verify admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const trainers = await User.find({ role: 'trainer' })
+      .select('-password')
+      .populate('clients', 'firstName lastName email')
+      .sort({ created: -1 });
+      
+    res.json({ trainers });
+  } catch (err) {
+    console.error('Error fetching trainers:', err);
+    res.status(500).json({ message: 'Failed to fetch trainers' });
+  }
+});
+
+// @route   PUT api/auth/trainer/:id/status
+// @desc    Update trainer active status
+// @access  Private (Admin only)
+router.put('/trainer/:id/status', auth, async (req, res) => {
+  try {
+    // Verify admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const { isActive } = req.body;
+    
+    // Find trainer and update status
+    const trainer = await User.findOne({ _id: req.params.id, role: 'trainer' });
+    
+    if (!trainer) {
+      return res.status(404).json({ message: 'Trainer not found' });
+    }
+
+    trainer.isActive = isActive;
+    await trainer.save();
+
+    res.json({ 
+      message: 'Trainer status updated successfully',
+      trainer: {
+        id: trainer._id,
+        isActive: trainer.isActive
+      }
+    });
+  } catch (err) {
+    console.error('Error updating trainer status:', err);
+    res.status(500).json({ message: 'Failed to update trainer status' });
+  }
+});
+
+// @route   PUT api/auth/trainer/:id/assign-clients
+// @desc    Assign multiple clients to a trainer
+// @access  Private (Admin only)
+router.put('/trainer/:id/assign-clients', auth, async (req, res) => {
+  try {
+    // Verify admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const { clientIds } = req.body;
+    const trainerId = req.params.id;
+
+    // Verify trainer exists
+    const trainer = await User.findOne({ _id: trainerId, role: 'trainer' });
+    if (!trainer) {
+      return res.status(404).json({ message: 'Trainer not found' });
+    }
+
+    // Remove trainer from all clients first
+    await User.updateMany(
+      { role: 'client', trainer: trainerId },
+      { $unset: { trainer: 1 } }
+    );
+
+    // Assign new clients to trainer
+    if (clientIds && clientIds.length > 0) {
+      await User.updateMany(
+        { _id: { $in: clientIds }, role: 'client' },
+        { trainer: trainerId }
+      );
+
+      // Update trainer's client list
+      trainer.clients = clientIds;
+      await trainer.save();
+    } else {
+      // If no clients selected, clear trainer's client list
+      trainer.clients = [];
+      await trainer.save();
+    }
+
+    res.json({ message: 'Clients assigned successfully' });
+  } catch (err) {
+    console.error('Error assigning clients:', err);
+    res.status(500).json({ message: 'Failed to assign clients' });
   }
 });
 
@@ -591,7 +734,7 @@ router.put('/user/:userId/toggle-active', adminAuth, async (req, res) => {
 // @route   GET api/auth/trainer/:trainerId/clients
 // @desc    Get clients assigned to a trainer
 // @access  Private
-router.get('/trainer/:trainerId/clients', adminAuth, async (req, res) => {
+router.get('/trainer/:trainerId/clients', auth, async (req, res) => {
   try {
     const trainer = await User.findById(req.params.trainerId)
       .populate('clients', '-password');
@@ -608,7 +751,7 @@ router.get('/trainer/:trainerId/clients', adminAuth, async (req, res) => {
 });
 
 // @route   PUT api/auth/trainer/:trainerId/assign-client
-// @desc    Assign a client to a trainer
+// @desc    Assign a single client to a trainer
 // @access  Private/Admin
 router.put('/trainer/:trainerId/assign-client', adminAuth, async (req, res) => {
   try {
