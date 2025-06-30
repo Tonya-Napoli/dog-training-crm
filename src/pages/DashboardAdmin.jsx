@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/DashboardAdmin.jsx
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from '../axios.js';
 import { debounce } from 'lodash';
-import ManageTrainers from '../components/admin/ManageTrainers';
+import ManualClientForm from '../components/forms/ManualClientForm';
 
 const DashboardAdmin = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('contacts');
   
-  // Contact state
+  // Contact Inquiries State
   const [contacts, setContacts] = useState([]);
-  const [trainers, setTrainers] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -20,61 +19,54 @@ const DashboardAdmin = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const perPage = 10;
 
-  // Fetch data based on active tab
+  // Client Management State
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [clientSearch, setClientSearch] = useState('');
+  const [clientsLoading, setClientsLoading] = useState(false);
+
+  // Fetch contacts - defined inside useEffect since it's not used elsewhere
   useEffect(() => {
-    if (activeTab === 'contacts') {
-      fetchContacts();
-    } else if (activeTab === 'trainers') {
-      fetchTrainers();
-    } else if (activeTab === 'clients') {
-      fetchClients();
-    }
-  }, [activeTab, page, search, statusFilter]);
+    const fetchContacts = async () => {
+      if (activeTab !== 'contacts') return;
+      
+      try {
+        setLoading(true);
+        const params = new URLSearchParams({ page, perPage });
+        if (search) params.append('search', search);
+        if (statusFilter) params.append('status', statusFilter);
+        const response = await axios.get(`/contacts?${params.toString()}`);
+        setContacts(response.data.contacts);
+        setTotal(response.data.total);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load contacts.');
+        setLoading(false);
+      }
+    };
 
-  // Fetch contacts
-  const fetchContacts = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page, perPage });
-      if (search) params.append('search', search);
-      if (statusFilter) params.append('status', statusFilter);
-      const response = await axios.get(`/contacts?${params.toString()}`);
-      setContacts(response.data.contacts);
-      setTotal(response.data.total);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load contacts.');
-    }
-    setLoading(false);
-  };
+    fetchContacts();
+  }, [page, search, statusFilter, activeTab, perPage]);
 
-  // Fetch trainers
-  const fetchTrainers = async () => {
-    setLoading(true);
+  // Fetch clients - using useCallback because it's called from ManualClientForm
+  const fetchClients = useCallback(async () => {
+    if (activeTab !== 'clients') return;
+    
     try {
-      const response = await axios.get('/auth/users/trainer');
-      setTrainers(response.data);
-      setError(null);
+      setClientsLoading(true);
+      const response = await axios.get(`/auth/clients?search=${clientSearch}`);
+      setClients(response.data.clients || []);
+      setClientsLoading(false);
     } catch (err) {
-      console.error('Error fetching trainers:', err);
-      setError('Failed to load trainers.');
+      console.error('Failed to fetch clients:', err);
+      setClientsLoading(false);
     }
-    setLoading(false);
-  };
+  }, [clientSearch, activeTab]);
 
-  // Fetch clients
-  const fetchClients = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get('/auth/users/client');
-      setClients(response.data);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching clients:', err);
-      setError('Failed to load clients.');
-    }
-    setLoading(false);
-  };
+  // useEffect for fetching clients
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   // Update contact status
   const handleStatusChange = async (id, status) => {
@@ -106,6 +98,16 @@ const DashboardAdmin = () => {
     }
   }, 500);
 
+  // Generate temporary password
+  const generateTempPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
   if (!user || user.role !== 'admin') {
     return <div className="text-center text-red-500">Unauthorized access.</div>;
   }
@@ -115,94 +117,100 @@ const DashboardAdmin = () => {
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       
       {/* Tab Navigation */}
-      <div className="flex border-b mb-6">
+      <div className="flex space-x-1 mb-6 border-b overflow-x-auto">
         <button
-          className={`px-4 py-2 font-semibold ${
-            activeTab === 'contacts' 
-              ? 'border-b-2 border-blue-500 text-blue-500' 
-              : 'text-gray-600 hover:text-gray-800'
-          }`}
           onClick={() => setActiveTab('contacts')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'contacts' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
         >
           Contact Inquiries
         </button>
         <button
-          className={`px-4 py-2 font-semibold ${
-            activeTab === 'trainers' 
-              ? 'border-b-2 border-blue-500 text-blue-500' 
-              : 'text-gray-600 hover:text-gray-800'
-          }`}
-          onClick={() => setActiveTab('trainers')}
-        >
-          Manage Trainers
-        </button>
-        <button
-          className={`px-4 py-2 font-semibold ${
-            activeTab === 'clients' 
-              ? 'border-b-2 border-blue-500 text-blue-500' 
-              : 'text-gray-600 hover:text-gray-800'
-          }`}
           onClick={() => setActiveTab('clients')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'clients' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
         >
-          Manage Clients
+          Client Management
         </button>
         <button
-          className={`px-4 py-2 font-semibold ${
-            activeTab === 'billing' 
-              ? 'border-b-2 border-blue-500 text-blue-500' 
-              : 'text-gray-600 hover:text-gray-800'
+          onClick={() => setActiveTab('trainers')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'trainers' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
           }`}
-          onClick={() => setActiveTab('billing')}
         >
-          Billing & Payments
+          Trainer Management
+        </button>
+        <button
+          onClick={() => setActiveTab('billing')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'billing' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
+        >
+          Billing
+        </button>
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'reports' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
+        >
+          Reports
         </button>
       </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-          {error}
-        </div>
-      )}
+      {/* Content based on active tab */}
+      {activeTab === 'contacts' ? (
+        // Contact Inquiries Tab
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Contact Inquiries</h2>
+          
+          {/* Search and Filter */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="New">New</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
 
-      {/* Loading State */}
-      {loading && <div className="text-center py-4">Loading...</div>}
-
-      {/* Tab Content */}
-      {!loading && (
-        <>
-          {/* Contact Inquiries Tab */}
-          {activeTab === 'contacts' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Contact Inquiries</h2>
-              {/* Search and Filter */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                <input
-                  type="text"
-                  placeholder="Search by name or email..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setPage(1);
-                  }}
-                  className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="New">New</option>
-                  <option value="Contacted">Contacted</option>
-                  <option value="Scheduled">Scheduled</option>
-                  <option value="Closed">Closed</option>
-                </select>
-              </div>
-              {/* Contacts Table */}
+          {/* Loading and Error States */}
+          {loading && <div className="text-center py-4">Loading...</div>}
+          {error && <div className="text-center text-red-500 py-4">{error}</div>}
+          
+          {/* Contacts Table */}
+          {!loading && !error && (
+            <>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse bg-white shadow-md rounded-lg">
                   <thead>
@@ -225,7 +233,11 @@ const DashboardAdmin = () => {
                         <td className="p-3">{contact.name}</td>
                         <td className="p-3">{contact.email}</td>
                         <td className="p-3">{contact.phone || 'N/A'}</td>
-                        <td className="p-3">{contact.message}</td>
+                        <td className="p-3">
+                          <div className="max-w-xs overflow-hidden text-ellipsis">
+                            {contact.message}
+                          </div>
+                        </td>
                         <td className="p-3">
                           <select
                             value={contact.status}
@@ -248,6 +260,7 @@ const DashboardAdmin = () => {
                             }
                             placeholder="Add follow-up notes..."
                             className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                            rows="2"
                           />
                         </td>
                         <td className="p-3">
@@ -258,6 +271,7 @@ const DashboardAdmin = () => {
                   </tbody>
                 </table>
               </div>
+              
               {/* Pagination */}
               <div className="flex justify-between items-center mt-4">
                 <button
@@ -278,58 +292,110 @@ const DashboardAdmin = () => {
                   Next
                 </button>
               </div>
+            </>
+          )}
+        </div>
+      ) : activeTab === 'clients' ? (
+        // Client Management Tab
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Client Management</h2>
+            <button
+              onClick={() => setShowAddClient(!showAddClient)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              {showAddClient ? 'Cancel' : '+ Add New Client'}
+            </button>
+          </div>
+
+          {/* Manual Client Registration Form */}
+          {showAddClient && (
+            <div className="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-xl font-semibold mb-4">Manual Client Registration</h3>
+              <p className="text-gray-600 mb-4">
+                Use this form to manually register clients who cannot self-register online 
+                (phone registrations, walk-ins, etc.)
+              </p>
+              <ManualClientForm 
+                generateTempPassword={generateTempPassword}
+                onSuccess={() => {
+                  setShowAddClient(false);
+                  fetchClients();
+                }}
+              />
             </div>
           )}
 
-          {/* Manage Trainers Tab */}
-            {activeTab === 'trainers' && (
-              <ManageTrainers />
-          )}
+          {/* Client Search */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search clients by name or email..."
+              value={clientSearch}
+              onChange={(e) => setClientSearch(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-          {/* Manage Clients Tab */}
-          {activeTab === 'clients' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Manage Clients</h2>
-              {clients.length === 0 ? (
-                <p>No clients found</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse bg-white shadow-md rounded-lg">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="p-3 text-left">Name</th>
-                        <th className="p-3 text-left">Email</th>
-                        <th className="p-3 text-left">Phone</th>
-                        <th className="p-3 text-left">Assigned Trainer</th>
-                        <th className="p-3 text-left">Joined</th>
+          {/* Clients List */}
+          {clientsLoading ? (
+            <div className="text-center py-8">Loading clients...</div>
+          ) : (
+            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+              {clients.length > 0 ? (
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-3 text-left font-semibold">Name</th>
+                      <th className="p-3 text-left font-semibold">Email</th>
+                      <th className="p-3 text-left font-semibold">Phone</th>
+                      <th className="p-3 text-left font-semibold">Registered</th>
+                      <th className="p-3 text-left font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clients.map((client, index) => (
+                      <tr key={client._id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                        <td className="p-3">{`${client.firstName} ${client.lastName}`}</td>
+                        <td className="p-3">{client.email}</td>
+                        <td className="p-3">{client.phone || 'N/A'}</td>
+                        <td className="p-3">{new Date(client.created).toLocaleDateString()}</td>
+                        <td className="p-3">
+                          <button className="text-blue-600 hover:underline text-sm">
+                            View Details
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {clients.map((client, index) => (
-                        <tr key={client._id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                          <td className="p-3">{client.firstName} {client.lastName}</td>
-                          <td className="p-3">{client.email}</td>
-                          <td className="p-3">{client.phone || 'N/A'}</td>
-                          <td className="p-3">{client.trainer ? 'Assigned' : 'Unassigned'}</td>
-                          <td className="p-3">{new Date(client.created).toLocaleDateString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  {clientSearch ? 'No clients found matching your search.' : 'No clients registered yet.'}
                 </div>
               )}
             </div>
           )}
-
-          {/* Billing & Payments Tab */}
-          {activeTab === 'billing' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Billing & Payments</h2>
-              <p className="text-gray-600">Billing functionality coming soon...</p>
-            </div>
-          )}
-        </>
-      )}
+        </div>
+      ) : activeTab === 'trainers' ? (
+        // Trainer Management Tab
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Trainer Management</h2>
+          <p className="text-gray-600">Trainer management features coming soon...</p>
+        </div>
+      ) : activeTab === 'billing' ? (
+        // Billing Tab
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Billing & Payments</h2>
+          <p className="text-gray-600">Billing features coming soon...</p>
+        </div>
+      ) : activeTab === 'reports' ? (
+        // Reports Tab
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Reports & Analytics</h2>
+          <p className="text-gray-600">Reporting features coming soon...</p>
+        </div>
+      ) : null}
     </div>
   );
 };

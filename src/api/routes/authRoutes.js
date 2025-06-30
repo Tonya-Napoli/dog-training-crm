@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-//import auth from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 import TrainerNote from '../models/TrainerNote.js';
 
 const router = express.Router();
@@ -103,6 +103,107 @@ const adminAuth = async (req, res, next) => {
 // @route   POST api/auth/register-trainer
 // @desc    Register a trainer with all trainer-specific fields
 // @access  Public
+router.post('/admin-register-client', auth, async (req, res) => {
+  try {
+    // Verify admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      password,
+      phone,
+      address,
+      dogName,
+      sendWelcomeEmail,
+      notes
+    } = req.body;
+
+    // Check if user already exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    // Create new user
+    user = new User({
+      username: email.split('@')[0], // Generate username from email
+      firstName,
+      lastName,
+      email,
+      password, // Will be hashed by pre-save hook
+      phone,
+      address,
+      role: 'client',
+      metadata: {
+        registeredBy: req.user.id,
+        registrationMethod: 'admin',
+        registrationNotes: notes,
+        temporaryPassword: true // Flag to prompt password change on first login
+      }
+    });
+
+    await user.save();
+
+    // If dog info provided, store it in user metadata for now
+    // (You can create a proper Dog model later)
+    if (dogName) {
+      user.metadata.tempDogInfo = {
+        name: dogName,
+        breed: req.body.dogBreed,
+        age: req.body.dogAge
+      };
+      await user.save();
+    }
+
+    // Send welcome email if requested
+    if (sendWelcomeEmail) {
+      // Import SendGrid at the top of your authRoutes.js file if not already there
+      const msg = {
+        to: email,
+        from: 'info@puppyprostraining.com',
+        subject: 'Welcome to Puppy Pros Training',
+        html: `
+          <h2>Welcome to Puppy Pros Training!</h2>
+          <p>Dear ${firstName},</p>
+          <p>An account has been created for you by our staff.</p>
+          <p><strong>Login Details:</strong></p>
+          <p>Email: ${email}</p>
+          <p>Temporary Password: ${password}</p>
+          <p>Please log in and change your password at your earliest convenience.</p>
+          <p>Login at: <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login">Login Here</a></p>
+          <p>Best regards,<br>Puppy Pros Training Team</p>
+        `,
+      };
+      
+      try {
+        const sgMail = await import('@sendgrid/mail');
+        sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
+        await sgMail.default.send(msg);
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Continue with registration even if email fails
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Client registered successfully',
+      user: {
+        id: user.id,
+        name: `${firstName} ${lastName}`,
+        email: user.email
+      }
+    });
+  } catch (err) {
+    console.error('Admin registration error:', err);
+    res.status(500).json({ message: 'Registration failed', error: err.message });
+  }
+});
+
 router.post('/register-trainer', async (req, res) => {
   try {
     const { 
