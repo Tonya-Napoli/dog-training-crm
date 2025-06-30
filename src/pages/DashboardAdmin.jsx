@@ -24,6 +24,8 @@ const DashboardAdmin = () => {
   const [clients, setClients] = useState([]);
   const [clientSearch, setClientSearch] = useState('');
   const [clientsLoading, setClientsLoading] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [showClientDetails, setShowClientDetails] = useState(false);
 
   // Trainer Management State
   const [trainers, setTrainers] = useState([]);
@@ -138,7 +140,7 @@ const DashboardAdmin = () => {
   // Toggle trainer status
   const toggleTrainerStatus = async (trainerId, currentStatus) => {
     try {
-      const response = await axios.put(`/auth/trainer/${trainerId}/status`, {
+      await axios.put(`/auth/trainer/${trainerId}/status`, {
         isActive: !currentStatus
       });
       
@@ -157,7 +159,7 @@ const DashboardAdmin = () => {
   // Assign clients to trainer
   const assignClientsToTrainer = async (trainerId, clientIds) => {
     try {
-      const response = await axios.put(`/auth/trainer/${trainerId}/assign-clients`, {
+      await axios.put(`/auth/trainer/${trainerId}/assign-clients`, {
         clientIds
       });
       
@@ -434,7 +436,13 @@ const DashboardAdmin = () => {
                         </td>
                         <td className="p-3">{new Date(client.created).toLocaleDateString()}</td>
                         <td className="p-3">
-                          <button className="text-blue-600 hover:underline text-sm">
+                          <button 
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setShowClientDetails(true);
+                            }}
+                            className="text-blue-600 hover:underline text-sm"
+                          >
                             View Details
                           </button>
                         </td>
@@ -448,6 +456,14 @@ const DashboardAdmin = () => {
                 </div>
               )}
             </div>
+          )}
+
+          {/* Client Details Modal */}
+          {showClientDetails && selectedClient && (
+            <ClientDetailsModal
+              client={selectedClient}
+              onClose={() => setShowClientDetails(false)}
+            />
           )}
         </div>
       ) : activeTab === 'trainers' ? (
@@ -625,6 +641,162 @@ const DashboardAdmin = () => {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+};
+
+// Client Details Modal Component
+const ClientDetailsModal = ({ client, onClose }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Client Details</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          {/* Basic Information */}
+          <div className="border-b pb-4">
+            <h4 className="font-semibold mb-2">Basic Information</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Name:</span>
+                <p className="font-medium">{client.firstName} {client.lastName}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Email:</span>
+                <p className="font-medium">{client.email}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Phone:</span>
+                <p className="font-medium">{client.phone || 'Not provided'}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Status:</span>
+                <p className="font-medium">
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    client.isActive 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {client.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Address */}
+          {client.address && (
+            <div className="border-b pb-4">
+              <h4 className="font-semibold mb-2">Address</h4>
+              <div className="text-sm">
+                <p>{client.address.street}</p>
+                <p>{client.address.city}, {client.address.state} {client.address.zipCode}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Dog Information */}
+          {client.dogName && (
+            <div className="border-b pb-4">
+              <h4 className="font-semibold mb-2">Dog Information</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Dog Name:</span>
+                  <p className="font-medium">{client.dogName}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Breed:</span>
+                  <p className="font-medium">{client.dogBreed || 'Not specified'}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Age:</span>
+                  <p className="font-medium">{client.dogAge || 'Not specified'}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Training Goals:</span>
+                  <p className="font-medium">
+                    {client.trainingGoals?.length > 0 
+                      ? client.trainingGoals.map(goal => 
+                          goal.replace(/([A-Z])/g, ' $1').trim()
+                        ).join(', ')
+                      : 'None specified'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Trainer Assignment */}
+          <div className="border-b pb-4">
+            <h4 className="font-semibold mb-2">Trainer Assignment</h4>
+            <div className="text-sm">
+              {client.trainer ? (
+                <p>
+                  Assigned to: <span className="font-medium">
+                    {client.trainer.firstName} {client.trainer.lastName}
+                  </span>
+                </p>
+              ) : (
+                <p className="text-gray-500">No trainer assigned</p>
+              )}
+            </div>
+          </div>
+
+          {/* Registration Info */}
+          <div className="border-b pb-4">
+            <h4 className="font-semibold mb-2">Registration Information</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Registered:</span>
+                <p className="font-medium">{new Date(client.created).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Registration Method:</span>
+                <p className="font-medium">
+                  {client.adminNotes?.registrationMethod || 'Self-registered'}
+                </p>
+              </div>
+            </div>
+            {client.adminNotes?.registrationNotes && (
+              <div className="mt-2">
+                <span className="text-gray-600 text-sm">Admin Notes:</span>
+                <p className="text-sm mt-1 p-2 bg-gray-50 rounded">
+                  {client.adminNotes.registrationNotes}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              onClick={() => {
+                // Add edit functionality here
+                alert('Edit functionality coming soon!');
+              }}
+              className="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
+            >
+              Edit Client
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
