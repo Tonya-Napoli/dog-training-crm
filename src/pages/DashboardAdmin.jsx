@@ -25,7 +25,14 @@ const DashboardAdmin = () => {
   const [clientSearch, setClientSearch] = useState('');
   const [clientsLoading, setClientsLoading] = useState(false);
 
-  // Fetch contacts - defined inside useEffect since it's not used elsewhere
+  // Trainer Management State
+  const [trainers, setTrainers] = useState([]);
+  const [trainersLoading, setTrainersLoading] = useState(false);
+  const [showAddTrainer, setShowAddTrainer] = useState(false);
+  const [selectedTrainer, setSelectedTrainer] = useState(null);
+  const [showAssignClients, setShowAssignClients] = useState(false);
+
+  // Fetch contacts when tab is 'contacts' and dependencies change
   useEffect(() => {
     const fetchContacts = async () => {
       if (activeTab !== 'contacts') return;
@@ -63,10 +70,30 @@ const DashboardAdmin = () => {
     }
   }, [clientSearch, activeTab]);
 
+  // Fetch trainers
+  const fetchTrainers = async () => {
+    try {
+      setTrainersLoading(true);
+      const response = await axios.get('/auth/trainers');
+      setTrainers(response.data.trainers || []);
+      setTrainersLoading(false);
+    } catch (err) {
+      console.error('Failed to fetch trainers:', err);
+      setTrainersLoading(false);
+    }
+  };
+
   // useEffect for fetching clients
   useEffect(() => {
     fetchClients();
   }, [fetchClients]);
+
+  // useEffect for fetching trainers
+  useEffect(() => {
+    if (activeTab === 'trainers') {
+      fetchTrainers();
+    }
+  }, [activeTab]);
 
   // Update contact status
   const handleStatusChange = async (id, status) => {
@@ -106,6 +133,42 @@ const DashboardAdmin = () => {
       password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return password;
+  };
+
+  // Toggle trainer status
+  const toggleTrainerStatus = async (trainerId, currentStatus) => {
+    try {
+      const response = await axios.put(`/auth/trainer/${trainerId}/status`, {
+        isActive: !currentStatus
+      });
+      
+      // Update local state
+      setTrainers(trainers.map(trainer => 
+        trainer._id === trainerId 
+          ? { ...trainer, isActive: !currentStatus }
+          : trainer
+      ));
+    } catch (err) {
+      console.error('Failed to update trainer status:', err);
+      alert('Failed to update trainer status');
+    }
+  };
+
+  // Assign clients to trainer
+  const assignClientsToTrainer = async (trainerId, clientIds) => {
+    try {
+      const response = await axios.put(`/auth/trainer/${trainerId}/assign-clients`, {
+        clientIds
+      });
+      
+      alert('Clients assigned successfully!');
+      setShowAssignClients(false);
+      fetchTrainers(); // Refresh the list
+      fetchClients(); // Refresh clients too
+    } catch (err) {
+      console.error('Failed to assign clients:', err);
+      alert('Failed to assign clients');
+    }
   };
 
   if (!user || user.role !== 'admin') {
@@ -349,6 +412,7 @@ const DashboardAdmin = () => {
                       <th className="p-3 text-left font-semibold">Name</th>
                       <th className="p-3 text-left font-semibold">Email</th>
                       <th className="p-3 text-left font-semibold">Phone</th>
+                      <th className="p-3 text-left font-semibold">Trainer</th>
                       <th className="p-3 text-left font-semibold">Registered</th>
                       <th className="p-3 text-left font-semibold">Actions</th>
                     </tr>
@@ -359,6 +423,15 @@ const DashboardAdmin = () => {
                         <td className="p-3">{`${client.firstName} ${client.lastName}`}</td>
                         <td className="p-3">{client.email}</td>
                         <td className="p-3">{client.phone || 'N/A'}</td>
+                        <td className="p-3">
+                          {client.trainer ? (
+                            <span className="text-sm">
+                              {client.trainer.firstName} {client.trainer.lastName}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Unassigned</span>
+                          )}
+                        </td>
                         <td className="p-3">{new Date(client.created).toLocaleDateString()}</td>
                         <td className="p-3">
                           <button className="text-blue-600 hover:underline text-sm">
@@ -380,22 +453,249 @@ const DashboardAdmin = () => {
       ) : activeTab === 'trainers' ? (
         // Trainer Management Tab
         <div>
-          <h2 className="text-2xl font-semibold mb-4">Trainer Management</h2>
-          <p className="text-gray-600">Trainer management features coming soon...</p>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Trainer Management</h2>
+            <button
+              onClick={() => setShowAddTrainer(!showAddTrainer)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              {showAddTrainer ? 'Cancel' : '+ Add New Trainer'}
+            </button>
+          </div>
+
+          {/* Add Trainer Form */}
+          {showAddTrainer && (
+            <div className="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-xl font-semibold mb-4">Add New Trainer</h3>
+              <p className="text-gray-600 mb-4">
+                You can direct trainers to self-register or manually add them here.
+              </p>
+              <button
+                onClick={() => window.open('/trainer/register', '_blank')}
+                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+              >
+                Open Trainer Registration Form
+              </button>
+            </div>
+          )}
+
+          {/* Trainers List */}
+          {trainersLoading ? (
+            <div className="text-center py-8">Loading trainers...</div>
+          ) : (
+            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+              {trainers.length > 0 ? (
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-3 text-left font-semibold">Name</th>
+                      <th className="p-3 text-left font-semibold">Email</th>
+                      <th className="p-3 text-left font-semibold">Phone</th>
+                      <th className="p-3 text-left font-semibold">Specialties</th>
+                      <th className="p-3 text-left font-semibold">Clients</th>
+                      <th className="p-3 text-left font-semibold">Status</th>
+                      <th className="p-3 text-left font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trainers.map((trainer, index) => (
+                      <tr key={trainer._id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                        <td className="p-3">{`${trainer.firstName} ${trainer.lastName}`}</td>
+                        <td className="p-3">{trainer.email}</td>
+                        <td className="p-3">{trainer.phone || 'N/A'}</td>
+                        <td className="p-3">
+                          <div className="text-sm">
+                            {trainer.specialties?.join(', ') || 'None specified'}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span className="font-semibold">{trainer.clients?.length || 0}</span> clients
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            trainer.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {trainer.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => toggleTrainerStatus(trainer._id, trainer.isActive)}
+                              className={`text-sm px-2 py-1 rounded ${
+                                trainer.isActive 
+                                  ? 'bg-red-500 text-white hover:bg-red-600' 
+                                  : 'bg-green-500 text-white hover:bg-green-600'
+                              }`}
+                            >
+                              {trainer.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedTrainer(trainer);
+                                setShowAssignClients(true);
+                              }}
+                              className="text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                              Assign Clients
+                            </button>
+                            <button className="text-blue-600 hover:underline text-sm">
+                              View Details
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  No trainers registered yet.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Assign Clients Modal */}
+          {showAssignClients && selectedTrainer && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
+                <h3 className="text-xl font-semibold mb-4">
+                  Assign Clients to {selectedTrainer.firstName} {selectedTrainer.lastName}
+                </h3>
+                <ClientAssignmentForm
+                  trainer={selectedTrainer}
+                  clients={clients}
+                  onAssign={assignClientsToTrainer}
+                  onCancel={() => setShowAssignClients(false)}
+                />
+              </div>
+            </div>
+          )}
         </div>
       ) : activeTab === 'billing' ? (
         // Billing Tab
         <div>
           <h2 className="text-2xl font-semibold mb-4">Billing & Payments</h2>
-          <p className="text-gray-600">Billing features coming soon...</p>
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <p className="text-gray-600">Billing and payment tracking features coming soon...</p>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900">Total Revenue</h3>
+                <p className="text-2xl font-bold text-blue-600">$0.00</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-green-900">Paid This Month</h3>
+                <p className="text-2xl font-bold text-green-600">$0.00</p>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-yellow-900">Outstanding</h3>
+                <p className="text-2xl font-bold text-yellow-600">$0.00</p>
+              </div>
+            </div>
+          </div>
         </div>
       ) : activeTab === 'reports' ? (
         // Reports Tab
         <div>
           <h2 className="text-2xl font-semibold mb-4">Reports & Analytics</h2>
-          <p className="text-gray-600">Reporting features coming soon...</p>
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <p className="text-gray-600">Business analytics and reporting features coming soon...</p>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-2">Quick Stats</h3>
+                <ul className="space-y-2 text-sm">
+                  <li>Total Clients: {clients.length}</li>
+                  <li>Active Trainers: {trainers.filter(t => t.isActive).length}</li>
+                  <li>New Inquiries: {contacts.filter(c => c.status === 'New').length}</li>
+                </ul>
+              </div>
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-2">Available Reports</h3>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li>• Client Growth Report</li>
+                  <li>• Trainer Performance Report</li>
+                  <li>• Revenue Analysis</li>
+                  <li>• Training Progress Summary</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
+    </div>
+  );
+};
+
+// Client Assignment Form Component
+const ClientAssignmentForm = ({ trainer, clients, onAssign, onCancel }) => {
+  const [selectedClients, setSelectedClients] = useState(
+    trainer.clients?.map(c => c._id || c) || []
+  );
+
+  const handleToggleClient = (clientId) => {
+    setSelectedClients(prev => 
+      prev.includes(clientId)
+        ? prev.filter(id => id !== clientId)
+        : [...prev, clientId]
+    );
+  };
+
+  const handleSubmit = () => {
+    onAssign(trainer._id, selectedClients);
+  };
+
+  return (
+    <div>
+      <div className="mb-4">
+        <p className="text-gray-600">
+          Current clients: {trainer.clients?.length || 0}
+        </p>
+      </div>
+      
+      <div className="border rounded-lg max-h-96 overflow-y-auto mb-4">
+        {clients.map(client => (
+          <label
+            key={client._id}
+            className="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b"
+          >
+            <input
+              type="checkbox"
+              checked={selectedClients.includes(client._id)}
+              onChange={() => handleToggleClient(client._id)}
+              className="mr-3"
+            />
+            <div className="flex-1">
+              <div className="font-semibold">
+                {client.firstName} {client.lastName}
+              </div>
+              <div className="text-sm text-gray-600">{client.email}</div>
+            </div>
+            {client.trainer === trainer._id && (
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                Currently assigned
+              </span>
+            )}
+          </label>
+        ))}
+      </div>
+      
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+        >
+          Save Assignments
+        </button>
+      </div>
     </div>
   );
 };
