@@ -152,7 +152,13 @@ router.post('/admin-register-client', auth, async (req, res) => {
       // Store dog info if provided
       dogName,
       dogBreed,
-      dogAge
+      dogAge,
+      // Store admin registration info
+      adminNotes: {
+        registrationNotes: notes,
+        registeredBy: req.user.id,
+        registrationMethod: 'admin'
+      }
     });
 
     await user.save();
@@ -304,7 +310,10 @@ router.post('/register-trainer', async (req, res) => {
       bio: bio.trim(),
       hourlyRate: Number(hourlyRate),
       isActive: true,
-      agreesToTerms: true
+      agreesToTerms: true,
+      adminNotes: {
+        registrationMethod: 'self'
+      }
     });
 
     await newTrainer.save();
@@ -420,7 +429,10 @@ router.post('/register-client', async (req, res) => {
       dogAge: dogAge.trim(),
       trainingGoals,
       isActive: true,
-      agreesToTerms: true
+      agreesToTerms: true,
+      adminNotes: {
+        registrationMethod: 'self'
+      }
     });
 
     await newClient.save();
@@ -475,7 +487,10 @@ router.post('/register', async (req, res) => {
       username: username || email.split('@')[0],
       email,
       password,
-      role
+      role,
+      adminNotes: {
+        registrationMethod: 'self'
+      }
     });
 
     await user.save();
@@ -546,7 +561,7 @@ router.get('/user', auth, async (req, res) => {
 });
 
 // ======================
-// Admin Dashboard Routes (NEW)
+// Admin Dashboard Routes
 // ======================
 
 // @route   GET api/auth/clients

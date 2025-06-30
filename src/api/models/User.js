@@ -3,6 +3,19 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
+  adminNotes: {
+    registrationNotes: String,
+    registeredBy: {  // Also fixed typo: was "registerBy", should be "registeredBy"
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    registrationMethod: {
+      type: String,
+      enum: ['self', 'admin', 'import'],
+      default: 'self'
+    }
+  }, // <-- This closing brace was missing!
+  
   firstName: {
     type: String,
     required: true,
@@ -15,11 +28,10 @@ const userSchema = new mongoose.Schema({
   },
   username: {
     type: String,
-    required: true,
+    sparse: true, // Changed from required: true to sparse: true to allow null values
     unique: true,
     trim: true
   },
-
   email: {
     type: String,
     required: true,
@@ -72,8 +84,8 @@ const userSchema = new mongoose.Schema({
       'competitionTraining',
       'searchAndRescue',
       'protectionTraining',
-      'fearRehabiliation',
-      'reactiveeDogTraining',
+      'fearRehabilitation', // Fixed typo: was "fearRehabiliation"
+      'reactiveDogTraining', // Fixed typo: was "reactiveeDogTraining"
       'puppySocialization',
       'advancedObedience',
       'sportDogTraining'
@@ -112,15 +124,15 @@ const userSchema = new mongoose.Schema({
       'agilityTraining',
       'puppyTraining',
       'advancedObedience',
-      'reactiveeDogTraining',
-      'fearRehabiliation',
+      'reactiveDogTraining', // Fixed typo
+      'fearRehabilitation', // Fixed typo
       'aggressionManagement',
       'anxietyReduction'
     ]
   }],
   
   // Client-trainer relationship
-  assignedTrainer: {
+  trainer: { // Changed from "assignedTrainer" to "trainer" to match your routes
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
@@ -196,7 +208,7 @@ userSchema.methods.updateLastLogin = async function() {
 };
 
 // Index for better query performance
-
+userSchema.index({ email: 1 });
 userSchema.index({ username: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
