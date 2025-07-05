@@ -615,11 +615,14 @@ const ReportButton = ({ title, description }) => (
   </button>
 );
 
-// Enhanced Client Details Modal with Billing Integration
+// Replace the EnhancedClientDetailsModal component in DashboardAdmin.jsx
+
 const EnhancedClientDetailsModal = ({ client, onClose }) => {
   const [clientPackages, setClientPackages] = useState([]);
   const [clientInvoices, setClientInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState({}); // Track loading state for individual actions
+  const [successMessage, setSuccessMessage] = useState(''); // Show success messages
 
   useEffect(() => {
     fetchClientBillingData();
@@ -652,6 +655,28 @@ const EnhancedClientDetailsModal = ({ client, onClose }) => {
           },
           lastSessionDate: new Date('2024-02-10'),
           nextSessionDate: new Date('2024-02-17')
+        },
+        {
+          _id: '2',
+          package: {
+            _id: '2',
+            name: 'Advanced Behavioral Training',
+            sessions: 4,
+            price: 200,
+            description: 'Specialized behavioral modification'
+          },
+          purchaseDate: new Date('2024-02-01'),
+          sessionsUsed: 0,
+          sessionsRemaining: 4,
+          status: 'active',
+          invoiceStatus: 'paid',
+          trainer: {
+            _id: '1',
+            firstName: 'Sarah',
+            lastName: 'Johnson'
+          },
+          lastSessionDate: null,
+          nextSessionDate: new Date('2024-02-20')
         }
       ]);
 
@@ -676,13 +701,139 @@ const EnhancedClientDetailsModal = ({ client, onClose }) => {
   };
 
   const recordSession = async (packageId) => {
-    console.log('Recording session for package:', packageId);
-    fetchClientBillingData();
+    try {
+      // Set loading state for this specific package
+      setActionLoading(prev => ({ ...prev, [packageId]: true }));
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the local state to reflect the session recording
+      setClientPackages(prevPackages => 
+        prevPackages.map(pkg => {
+          if (pkg._id === packageId) {
+            const newSessionsUsed = pkg.sessionsUsed + 1;
+            const newSessionsRemaining = pkg.sessionsRemaining - 1;
+            const isCompleted = newSessionsRemaining === 0;
+            
+            return {
+              ...pkg,
+              sessionsUsed: newSessionsUsed,
+              sessionsRemaining: newSessionsRemaining,
+              status: isCompleted ? 'completed' : pkg.status,
+              lastSessionDate: new Date(),
+              nextSessionDate: isCompleted ? null : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next week
+            };
+          }
+          return pkg;
+        })
+      );
+
+      // Show success message
+      setSuccessMessage('Session recorded successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+
+      // Here you would make the actual API call:
+      // await axios.post('/billing/record-session', { 
+      //   clientId: client._id, 
+      //   packageId,
+      //   sessionDate: new Date()
+      // });
+
+    } catch (err) {
+      console.error('Failed to record session:', err);
+      alert('Failed to record session. Please try again.');
+    } finally {
+      // Clear loading state
+      setActionLoading(prev => ({ ...prev, [packageId]: false }));
+    }
   };
 
   const markInvoicePaid = async (invoiceId) => {
-    console.log('Marking invoice paid:', invoiceId);
-    fetchClientBillingData();
+    try {
+      setActionLoading(prev => ({ ...prev, [`invoice_${invoiceId}`]: true }));
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the local state
+      setClientInvoices(prevInvoices =>
+        prevInvoices.map(invoice => {
+          if (invoice._id === invoiceId) {
+            return {
+              ...invoice,
+              status: 'paid',
+              paidDate: new Date()
+            };
+          }
+          return invoice;
+        })
+      );
+
+      setSuccessMessage('Invoice marked as paid!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+
+      // Here you would make the actual API call:
+      // await axios.put(`/billing/invoices/${invoiceId}/mark-paid`);
+
+    } catch (err) {
+      console.error('Failed to mark invoice as paid:', err);
+      alert('Failed to update invoice. Please try again.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`invoice_${invoiceId}`]: false }));
+    }
+  };
+
+  const createInvoice = async (packageId) => {
+    try {
+      setActionLoading(prev => ({ ...prev, [`create_invoice_${packageId}`]: true }));
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Find the package to create invoice for
+      const clientPackage = clientPackages.find(pkg => pkg._id === packageId);
+      if (!clientPackage) return;
+
+      // Create new invoice
+      const newInvoice = {
+        _id: Date.now().toString(),
+        invoiceNumber: `INV-2024-${String(clientInvoices.length + 1).padStart(3, '0')}`,
+        amount: clientPackage.package.price,
+        status: 'pending',
+        createdAt: new Date(),
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        paidDate: null,
+        items: [{ description: clientPackage.package.name, amount: clientPackage.package.price }]
+      };
+
+      // Add to invoices list
+      setClientInvoices(prev => [newInvoice, ...prev]);
+
+      // Update package status
+      setClientPackages(prevPackages =>
+        prevPackages.map(pkg => 
+          pkg._id === packageId 
+            ? { ...pkg, invoiceStatus: 'pending' }
+            : pkg
+        )
+      );
+
+      setSuccessMessage('Invoice created successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+
+      // Here you would make the actual API call:
+      // await axios.post('/billing/invoices/from-package', { 
+      //   clientId: client._id, 
+      //   packageId 
+      // });
+
+    } catch (err) {
+      console.error('Failed to create invoice:', err);
+      alert('Failed to create invoice. Please try again.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`create_invoice_${packageId}`]: false }));
+    }
   };
 
   // Calculate totals
@@ -713,6 +864,13 @@ const EnhancedClientDetailsModal = ({ client, onClose }) => {
             </svg>
           </button>
         </div>
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
+            {successMessage}
+          </div>
+        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Basic Information */}
@@ -821,6 +979,8 @@ const EnhancedClientDetailsModal = ({ client, onClose }) => {
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                           clientPkg.status === 'active' 
                             ? 'bg-green-100 text-green-800'
+                            : clientPkg.status === 'completed'
+                            ? 'bg-blue-100 text-blue-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
                           {clientPkg.status}
@@ -835,7 +995,9 @@ const EnhancedClientDetailsModal = ({ client, onClose }) => {
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              clientPkg.status === 'completed' ? 'bg-blue-600' : 'bg-green-600'
+                            }`}
                             style={{ width: `${(clientPkg.sessionsUsed / clientPkg.package.sessions) * 100}%` }}
                           ></div>
                         </div>
@@ -853,6 +1015,12 @@ const EnhancedClientDetailsModal = ({ client, onClose }) => {
                             <span>{clientPkg.trainer.firstName} {clientPkg.trainer.lastName}</span>
                           </div>
                         )}
+                        {clientPkg.lastSessionDate && (
+                          <div className="flex justify-between">
+                            <span>Last Session:</span>
+                            <span>{new Date(clientPkg.lastSessionDate).toLocaleDateString()}</span>
+                          </div>
+                        )}
                         {clientPkg.nextSessionDate && (
                           <div className="flex justify-between">
                             <span>Next Session:</span>
@@ -861,17 +1029,52 @@ const EnhancedClientDetailsModal = ({ client, onClose }) => {
                             </span>
                           </div>
                         )}
+                        <div className="flex justify-between">
+                          <span>Sessions Remaining:</span>
+                          <span className={`font-medium ${
+                            clientPkg.sessionsRemaining === 0 ? 'text-gray-500' : 'text-green-600'
+                          }`}>
+                            {clientPkg.sessionsRemaining}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Action Buttons */}
-                      {clientPkg.status === 'active' && clientPkg.sessionsRemaining > 0 && (
-                        <button
-                          onClick={() => recordSession(clientPkg._id)}
-                          className="w-full mt-3 text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                          Record Session
-                        </button>
-                      )}
+                      <div className="flex gap-2 mt-3">
+                        {clientPkg.status === 'active' && clientPkg.sessionsRemaining > 0 && (
+                          <button
+                            onClick={() => recordSession(clientPkg._id)}
+                            disabled={actionLoading[clientPkg._id]}
+                            className={`flex-1 text-xs px-2 py-2 rounded font-medium transition-colors ${
+                              actionLoading[clientPkg._id]
+                                ? 'bg-gray-400 text-white cursor-not-allowed'
+                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                            }`}
+                          >
+                            {actionLoading[clientPkg._id] ? 'Recording...' : 'Record Session'}
+                          </button>
+                        )}
+                        
+                        {clientPkg.status === 'completed' && (
+                          <div className="flex-1 text-xs px-2 py-2 bg-green-100 text-green-800 rounded text-center font-medium">
+                            ✓ Package Complete
+                          </div>
+                        )}
+
+                        {clientPkg.invoiceStatus === 'pending_payment' && (
+                          <button
+                            onClick={() => createInvoice(clientPkg._id)}
+                            disabled={actionLoading[`create_invoice_${clientPkg._id}`]}
+                            className={`flex-1 text-xs px-2 py-2 rounded font-medium transition-colors ${
+                              actionLoading[`create_invoice_${clientPkg._id}`]
+                                ? 'bg-gray-400 text-white cursor-not-allowed'
+                                : 'bg-green-500 text-white hover:bg-green-600'
+                            }`}
+                          >
+                            {actionLoading[`create_invoice_${clientPkg._id}`] ? 'Creating...' : 'Create Invoice'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -901,6 +1104,8 @@ const EnhancedClientDetailsModal = ({ client, onClose }) => {
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                           invoice.status === 'paid' 
                             ? 'bg-green-100 text-green-800'
+                            : invoice.status === 'overdue'
+                            ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
                           {invoice.status}
@@ -916,14 +1121,27 @@ const EnhancedClientDetailsModal = ({ client, onClose }) => {
                           <span>Due Date:</span>
                           <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
                         </div>
+                        {invoice.paidDate && (
+                          <div className="flex justify-between">
+                            <span>Paid Date:</span>
+                            <span className="text-green-600 font-medium">
+                              {new Date(invoice.paidDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {invoice.status !== 'paid' && (
                         <button
                           onClick={() => markInvoicePaid(invoice._id)}
-                          className="w-full mt-2 text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                          disabled={actionLoading[`invoice_${invoice._id}`]}
+                          className={`w-full mt-2 text-xs px-2 py-2 rounded font-medium transition-colors ${
+                            actionLoading[`invoice_${invoice._id}`]
+                              ? 'bg-gray-400 text-white cursor-not-allowed'
+                              : 'bg-green-500 text-white hover:bg-green-600'
+                          }`}
                         >
-                          Mark Paid
+                          {actionLoading[`invoice_${invoice._id}`] ? 'Processing...' : 'Mark Paid'}
                         </button>
                       )}
                     </div>
