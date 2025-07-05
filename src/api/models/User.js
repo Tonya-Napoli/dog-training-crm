@@ -208,11 +208,27 @@ userSchema.methods.updateLastLogin = async function() {
 };
 
 // Index for better query performance
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
 
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Method to compare passwords
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
 const User = mongoose.model('User', userSchema);
+
 
 export default User;
