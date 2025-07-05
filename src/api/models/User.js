@@ -150,7 +150,7 @@ const userSchema = new mongoose.Schema({
     default: 'full'
   },
   
-  // Common fields
+  //
   isActive: {
     type: Boolean,
     default: true
@@ -172,12 +172,10 @@ const userSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual for full name
 userSchema.virtual('fullName').get(function() {
   return `${this.firstName} ${this.lastName}`;
 });
 
-// Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
@@ -207,7 +205,6 @@ userSchema.methods.updateLastLogin = async function() {
   return await this.save();
 };
 
-// Index for better query performance
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
 
