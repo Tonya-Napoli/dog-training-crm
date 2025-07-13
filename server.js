@@ -6,6 +6,8 @@ import emailRoutes from './src/api/routes/emailRoutes.js';
 import authRoutes from './src/api/routes/authRoutes.js';
 import trainerRoutes from './src/api/routes/trainerRoutes.js';
 import billingRoutes from './src/api/routes/billingRoutes.js';
+import sessionRoutes from './src/api/routes/sessionRoutes.js';
+
 
 // Check for SendGrid API key
 if (!process.env.SENDGRID_API_KEY) {
@@ -40,6 +42,7 @@ app.use('/api', emailRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/trainers', trainerRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/sessions', sessionRoutes);
 
 // Default route
 app.get('/', (req, res) => {
