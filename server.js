@@ -10,8 +10,8 @@ import sessionRoutes from './src/api/routes/sessionRoutes.js';
 
 
 // Check for SendGrid API key
-if (!process.env.SENDGRID_API_KEY) {
-  console.error('SENDGRID_API_KEY is missing. Check your .env file.');
+if (!process.env.RESEND_API_KEY) {
+  console.error('RESEND_API_KEY is missing. Check your .env file.');
   process.exit(1);
 }
 

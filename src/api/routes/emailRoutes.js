@@ -1,11 +1,11 @@
 import express from 'express';
-import sgMail from '@sendgrid/mail';
+import { RESEND } from 'resend';
 import Contact from '../models/Contact.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const resend = new RESEND(process.env.RESEND_API_KEY);
 
 // Submit contact form (public)
 router.post('/send-email', async (req, res) => {
@@ -25,7 +25,10 @@ router.post('/send-email', async (req, res) => {
 
     await newContact.save();
 
-    const msg = {
+  
+
+    await resend.emails.send({
+
       to: 'info@puppyprostraining.com',
       from: 'contact@puppyprostraining.com',
       subject: `New Inquiry from ${name}`,
@@ -36,9 +39,9 @@ router.post('/send-email', async (req, res) => {
         <p><strong>Message:</strong></p>
         <p>${message}</p>
       `,
-    };
+    });
 
-    await sgMail.send(msg);
+    
     res.status(200).json({ success: 'Form submitted successfully. We will contact you soon!' });
   } catch (error) {
     console.error('Error processing form:', error);
