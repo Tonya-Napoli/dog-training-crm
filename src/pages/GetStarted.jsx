@@ -16,23 +16,30 @@ const GetStartedPage = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
+    e.preventDefault();
+    console.log('Form submitted:', formData); 
     setStatus("Submitting...");
 
     try {
+      console.log('Making fetch request...'); 
       const response = await fetch("http://localhost:4000/api/send-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData), // Send the entire form data object
+        body: JSON.stringify(formData), 
       });
 
+      console.log('Response received:', response.status, response.ok);
+
       if (response.ok) {
+        const result = await response.json();
+        console.log('Server response:', result);
         setStatus("Request sent successfully!");
         setFormData({ name: "", email: "", phone: "", message: "" }); // Reset form
       } else {
         const result = await response.json();
+        console.log('Error response:', result)
         setStatus(`Error: ${result.error || 'Failed to send'}`);
       }
     } catch (error) {

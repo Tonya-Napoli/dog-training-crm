@@ -8,8 +8,8 @@ import trainerRoutes from './src/api/routes/trainerRoutes.js';
 import billingRoutes from './src/api/routes/billingRoutes.js';
 import sessionRoutes from './src/api/routes/sessionRoutes.js';
 
+console.log('SERVER STARTING');
 
-// Check for SendGrid API key
 if (!process.env.RESEND_API_KEY) {
   console.error('RESEND_API_KEY is missing. Check your .env file.');
   process.exit(1);
@@ -34,6 +34,12 @@ app.use((err, req, res, next) => {
     console.error('Invalid JSON:', err);
     return res.status(400).json({ error: 'Invalid JSON' });
   }
+  next();
+});
+
+app.use((req, res, next) => {
+  console.log(`📥 ${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Request body:', req.body);
   next();
 });
 

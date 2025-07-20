@@ -12,10 +12,13 @@ router.post('/send-email', async (req, res) => {
   try {
     const { name, email, phone, message } = req.body;
 
+    console.log('📧 Email request received:', { name, email, phone });
+
     if (!name || !email || !message) {
       return res.status(400).json({ error: 'Name, email, and message are required.' });
     }
 
+    // Save to database first
     const newContact = new Contact({
       name,
       email,
@@ -24,13 +27,20 @@ router.post('/send-email', async (req, res) => {
     });
 
     await newContact.save();
+    console.log('Contact saved to database');
 
-  
+    // Check if Resend API key exists
+    if (!process.env.RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is missing!');
+      return res.status(500).json({ error: 'Email service not configured' });
+    }
 
-    await resend.emails.send({
+    console.log('Resend API key found, attempting to send email...');
 
-      to: 'info@puppyprostraining.com',
-      from: 'contact@puppyprostraining.com',
+    // Send email using Resend
+    const emailResult = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: 'tonya@puppyprostraining.com',
       subject: `New Inquiry from ${name}`,
       html: `
         <p><strong>Name:</strong> ${name}</p>
@@ -41,13 +51,14 @@ router.post('/send-email', async (req, res) => {
       `,
     });
 
-    
+    console.log('Email sent successfully! Resend response:', emailResult);
+
     res.status(200).json({ success: 'Form submitted successfully. We will contact you soon!' });
   } catch (error) {
     console.error('Error processing form:', error);
     res.status(500).json({
       error: 'Failed to process your request.',
-      details: error.response?.body?.errors?.[0]?.message || error.message,
+      details: error.message,
     });
   }
 });
@@ -128,7 +139,7 @@ router.put('/contacts/:id/notes', auth, async (req, res) => {
 router.get('/test', (req, res) => {
   res.status(200).json({
     message: 'Email API is working',
-    sendgridConfigured: !!process.env.SENDGRID_API_KEY,
+    resendConfigured: !!process.env.RESEND_API_KEY,
   });
 });
 
