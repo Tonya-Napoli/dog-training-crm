@@ -164,33 +164,31 @@ router.post('/admin-register-client', auth, async (req, res) => {
     await user.save();
 
     // Send welcome email if requested
-    if (sendWelcomeEmail && process.env.SENDGRID_API_KEY) {
-      try {
-        const sgMail = await import('@sendgrid/mail');
-        sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
-        
-        const msg = {
-          to: email,
-          from: 'info@puppyprostraining.com',
-          subject: 'Welcome to Puppy Pros Training',
-          html: `
-            <h2>Welcome to Puppy Pros Training!</h2>
-            <p>Dear ${firstName},</p>
-            <p>An account has been created for you by our staff.</p>
-            <p><strong>Login Details:</strong></p>
-            <p>Email: ${email}</p>
-            <p>Temporary Password: ${password}</p>
-            <p>Please log in and change your password at your earliest convenience.</p>
-            <p>Login at: <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login">Login Here</a></p>
-            <p>Best regards,<br>Puppy Pros Training Team</p>
-          `,
-        };
-        
-        await sgMail.default.send(msg);
-      } catch (emailError) {
-        console.error('Failed to send welcome email:', emailError);
-      }
-    }
+   if (sendWelcomeEmail && process.env.RESEND_API_KEY) {
+  try {
+    const { Resend } = await import('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    
+    await resend.emails.send({
+      from: 'info@puppyprostraining.com',
+      to: email,
+      subject: 'Welcome to Puppy Pros Training',
+      html: `
+        <h2>Welcome to Puppy Pros Training!</h2>
+        <p>Dear ${firstName},</p>
+        <p>An account has been created for you by our staff.</p>
+        <p><strong>Login Details:</strong></p>
+        <p>Email: ${email}</p>
+        <p>Temporary Password: ${password}</p>
+        <p>Please log in and change your password at your earliest convenience.</p>
+        <p>Login at: <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login">Login Here</a></p>
+        <p>Best regards,<br>Puppy Pros Training Team</p>
+      `,
+    });
+  } catch (emailError) {
+    console.error('Failed to send welcome email:', emailError);
+  }
+}
 
     res.json({
       success: true,
