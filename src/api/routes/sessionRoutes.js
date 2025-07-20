@@ -1,4 +1,6 @@
 import express from 'express';
+//import auth, {adminAuth} from '../middleware/adminAuth.js';
+
 const router = express.Router();
 
 //WIP  expand these later

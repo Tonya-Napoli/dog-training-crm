@@ -1,11 +1,11 @@
 import express from 'express';
-import { RESEND } from 'resend';
+import { Resend } from 'resend';
 import Contact from '../models/Contact.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-const resend = new RESEND(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Submit contact form (public)
 router.post('/send-email', async (req, res) => {
