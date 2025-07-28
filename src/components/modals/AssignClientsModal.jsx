@@ -1,6 +1,6 @@
 import React from 'react';
-import BaseModal from './BaseModal';
-import ClientAssignmentForm from './ClientAssignmentForm';
+import BaseModal from './BaseModal.jsx';
+import ClientAssignmentForm from '../forms/ClientAssignmentForm.jsx';
 
 const AssignClientsModal = ({ 
   isOpen, 

@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import BaseModal from './BaseModal';
+import BaseModal from './BaseModal.jsx';
 
 const ClientDetailsModal = ({ client, isOpen, onClose }) => {
   const [clientData, setClientData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Hooks must be called before any early returns
   useEffect(() => {
-    if (!isOpen || !client) return;
+    if (!isOpen || !client) {
+      setLoading(true);
+      return;
+    }
 
     // Fetch additional client data including billing, training, etc.
     const fetchClientDetails = async () => {
@@ -16,15 +20,15 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
         // Mock client-specific data based on client ID
         const mockClientDetails = {
           billing: {
-            totalSpent: client._id.endsWith('1') ? 1250 : client._id.endsWith('2') ? 980 : 1450,
-            outstanding: client._id.endsWith('1') ? 150 : client._id.endsWith('2') ? 0 : 200,
-            lastPayment: client._id.endsWith('1') ? '2024-07-15' : client._id.endsWith('2') ? '2024-07-20' : '2024-07-10',
-            nextDue: client._id.endsWith('1') ? '2024-08-15' : client._id.endsWith('2') ? '2024-08-20' : '2024-08-10'
+            totalSpent: client._id?.endsWith('1') ? 1250 : client._id?.endsWith('2') ? 980 : 1450,
+            outstanding: client._id?.endsWith('1') ? 150 : client._id?.endsWith('2') ? 0 : 200,
+            lastPayment: client._id?.endsWith('1') ? '2024-07-15' : client._id?.endsWith('2') ? '2024-07-20' : '2024-07-10',
+            nextDue: client._id?.endsWith('1') ? '2024-08-15' : client._id?.endsWith('2') ? '2024-08-20' : '2024-08-10'
           },
-          trainingPackages: client._id.endsWith('1') ? [
+          trainingPackages: client._id?.endsWith('1') ? [
             { name: 'Basic Obedience Package', sessions: 8, completed: 6, price: 600 },
             { name: 'Advanced Training Package', sessions: 6, completed: 2, price: 750 }
-          ] : client._id.endsWith('2') ? [
+          ] : client._id?.endsWith('2') ? [
             { name: 'Puppy Training Package', sessions: 10, completed: 8, price: 500 },
             { name: 'Socialization Package', sessions: 4, completed: 4, price: 300 }
           ] : [
@@ -32,16 +36,16 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
             { name: 'Advanced Obedience Package', sessions: 8, completed: 5, price: 650 }
           ],
           trainingProgress: {
-            basicCommands: client._id.endsWith('1') ? 85 : client._id.endsWith('2') ? 92 : 78,
-            leashTraining: client._id.endsWith('1') ? 70 : client._id.endsWith('2') ? 88 : 85,
-            socialSkills: client._id.endsWith('1') ? 75 : client._id.endsWith('2') ? 95 : 60,
-            behaviorIssues: client._id.endsWith('1') ? 80 : client._id.endsWith('2') ? 90 : 45
+            basicCommands: client._id?.endsWith('1') ? 85 : client._id?.endsWith('2') ? 92 : 78,
+            leashTraining: client._id?.endsWith('1') ? 70 : client._id?.endsWith('2') ? 88 : 85,
+            socialSkills: client._id?.endsWith('1') ? 75 : client._id?.endsWith('2') ? 95 : 60,
+            behaviorIssues: client._id?.endsWith('1') ? 80 : client._id?.endsWith('2') ? 90 : 45
           },
-          recentInvoices: client._id.endsWith('1') ? [
+          recentInvoices: client._id?.endsWith('1') ? [
             { id: 'INV-001', date: '2024-07-15', amount: 150, status: 'Paid', description: 'Basic Training Sessions' },
             { id: 'INV-002', date: '2024-06-15', amount: 200, status: 'Paid', description: 'Advanced Training Package' },
             { id: 'INV-003', date: '2024-08-15', amount: 150, status: 'Pending', description: 'Monthly Training Fee' }
-          ] : client._id.endsWith('2') ? [
+          ] : client._id?.endsWith('2') ? [
             { id: 'INV-004', date: '2024-07-20', amount: 100, status: 'Paid', description: 'Puppy Training Sessions' },
             { id: 'INV-005', date: '2024-06-20', amount: 80, status: 'Paid', description: 'Socialization Package' },
             { id: 'INV-006', date: '2024-05-20', amount: 120, status: 'Paid', description: 'Initial Assessment' }
@@ -57,8 +61,6 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
           setClientData(mockClientDetails);
           setLoading(false);
         }, 300);
-
-        // TODO: Replace with real API calls in production
         
       } catch (error) {
         console.error('Error fetching client details:', error);
@@ -68,6 +70,11 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
 
     fetchClientDetails();
   }, [client, isOpen]);
+
+  // Early return after hooks
+  if (!client) {
+    return null;
+  }
 
   if (loading) {
     return (
@@ -83,7 +90,7 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
     <BaseModal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={`Client Details - ${client?.firstName} ${client?.lastName}`}
+      title={`Client Details - ${client?.firstName || 'Unknown'} ${client?.lastName || ''}`}
       maxWidth="max-w-4xl"
     >
       {/* Grid Layout for Cards */}
@@ -95,25 +102,25 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">Name:</span>
-              <span className="font-medium">{client.firstName} {client.lastName}</span>
+              <span className="font-medium">{client?.firstName || 'N/A'} {client?.lastName || ''}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Email:</span>
-              <span className="font-medium">{client.email}</span>
+              <span className="font-medium">{client?.email || 'N/A'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Phone:</span>
-              <span className="font-medium">{client.phone || 'Not provided'}</span>
+              <span className="font-medium">{client?.phone || 'Not provided'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Status:</span>
               <span className={`px-2 py-1 rounded-full text-xs ${
-                client.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                client?.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
               }`}>
-                {client.isActive ? 'Active' : 'Inactive'}
+                {client?.isActive ? 'Active' : 'Inactive'}
               </span>
             </div>
-            {client.address && (
+            {client?.address && (
               <div className="pt-2 border-t">
                 <span className="text-gray-600">Address:</span>
                 <div className="mt-1">
@@ -131,20 +138,20 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">Dog Name:</span>
-              <span className="font-medium">{client.dogName || 'Not specified'}</span>
+              <span className="font-medium">{client?.dogName || 'Not specified'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Breed:</span>
-              <span className="font-medium">{client.dogBreed || 'Not specified'}</span>
+              <span className="font-medium">{client?.dogBreed || 'Not specified'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Age:</span>
-              <span className="font-medium">{client.dogAge || 'Not specified'}</span>
+              <span className="font-medium">{client?.dogAge || 'Not specified'}</span>
             </div>
             <div className="pt-2 border-t">
               <span className="text-gray-600">Training Goals:</span>
               <div className="mt-1">
-                {client.trainingGoals?.length > 0 ? (
+                {client?.trainingGoals?.length > 0 ? (
                   <ul className="list-disc pl-4">
                     {client.trainingGoals.map((goal, index) => (
                       <li key={index}>{goal.replace(/([A-Z])/g, ' $1').trim()}</li>
@@ -158,7 +165,7 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
             <div className="pt-2 border-t">
               <span className="text-gray-600">Trainer:</span>
               <div className="mt-1">
-                {client.trainer ? (
+                {client?.trainer ? (
                   <span className="font-medium">
                     {client.trainer.firstName} {client.trainer.lastName}
                   </span>
@@ -195,21 +202,6 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
                 <span className="text-gray-600">Next Due:</span>
                 <span className="font-medium">{new Date(clientData.billing.nextDue).toLocaleDateString()}</span>
               </div>
-              <div className="pt-2 border-t">
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  clientData.billing.outstanding === 0 
-                    ? 'bg-green-100 text-green-800' 
-                    : clientData.billing.outstanding > 100 
-                    ? 'bg-red-100 text-red-800' 
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {clientData.billing.outstanding === 0 
-                    ? 'Paid Up' 
-                    : clientData.billing.outstanding > 100 
-                    ? 'Payment Overdue' 
-                    : 'Payment Due'}
-                </span>
-              </div>
             </div>
           ) : (
             <p className="text-gray-500">No billing information available</p>
@@ -245,7 +237,7 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
           )}
         </div>
 
-        {/* Advanced Behavior Training (Progress) Card */}
+        {/* Training Progress Card */}
         <div className="bg-purple-50 rounded-lg p-4">
           <h4 className="font-semibold mb-3 text-lg">Training Progress</h4>
           {clientData?.trainingProgress ? (
@@ -267,14 +259,6 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
                   </div>
                 </div>
               ))}
-              <div className="pt-2 border-t">
-                <span className="text-xs text-gray-600">
-                  Overall Progress: {Math.round(
-                    Object.values(clientData.trainingProgress).reduce((a, b) => a + b, 0) / 
-                    Object.values(clientData.trainingProgress).length
-                  )}%
-                </span>
-              </div>
             </div>
           ) : (
             <p className="text-gray-500">No training progress data</p>
@@ -307,11 +291,6 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
                   </div>
                 </div>
               ))}
-              {clientData.recentInvoices.length > 5 && (
-                <p className="text-xs text-gray-500 pt-2">
-                  ... and {clientData.recentInvoices.length - 5} more invoices
-                </p>
-              )}
             </div>
           ) : (
             <p className="text-gray-500">No invoices found</p>
@@ -320,49 +299,41 @@ const ClientDetailsModal = ({ client, isOpen, onClose }) => {
       </div>
 
       {/* Registration Info */}
-      <div className="mt-6 bg-gray-50 rounded-lg p-4">
-        <h4 className="font-semibold mb-3">Registration Information</h4>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-600">Registered:</span>
-            <p className="font-medium">{new Date(client.created).toLocaleDateString()}</p>
+      {client?.created && (
+        <div className="mt-6 bg-gray-50 rounded-lg p-4">
+          <h4 className="font-semibold mb-3">Registration Information</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600">Registered:</span>
+              <p className="font-medium">{new Date(client.created).toLocaleDateString()}</p>
+            </div>
+            <div>
+              <span className="text-gray-600">Registration Method:</span>
+              <p className="font-medium">
+                {client.adminNotes?.registrationMethod || 'Self-registered'}
+              </p>
+            </div>
           </div>
-          <div>
-            <span className="text-gray-600">Registration Method:</span>
-            <p className="font-medium">
-              {client.adminNotes?.registrationMethod || 'Self-registered'}
-            </p>
-          </div>
+          {client.adminNotes?.registrationNotes && (
+            <div className="mt-2">
+              <span className="text-gray-600 text-sm">Admin Notes:</span>
+              <p className="text-sm mt-1 p-2 bg-white rounded border">
+                {client.adminNotes.registrationNotes}
+              </p>
+            </div>
+          )}
         </div>
-        {client.adminNotes?.registrationNotes && (
-          <div className="mt-2">
-            <span className="text-gray-600 text-sm">Admin Notes:</span>
-            <p className="text-sm mt-1 p-2 bg-white rounded border">
-              {client.adminNotes.registrationNotes}
-            </p>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Actions */}
       <div className="flex justify-end space-x-3 pt-6 mt-6 border-t">
         <button
           onClick={() => {
-            // TODO: Add edit functionality
             alert('Edit functionality coming soon!');
           }}
           className="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
         >
           Edit Client
-        </button>
-        <button
-          onClick={() => {
-            // TODO: Add generate invoice functionality
-            alert('Generate invoice functionality coming soon!');
-          }}
-          className="px-4 py-2 text-green-600 border border-green-600 rounded-md hover:bg-green-50"
-        >
-          Generate Invoice
         </button>
         <button
           onClick={onClose}
