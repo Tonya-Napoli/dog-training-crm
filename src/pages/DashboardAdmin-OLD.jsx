@@ -1,0 +1,999 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '../contexts/AuthContext.js';
+import axios from '../axios.js';
+import { debounce } from 'lodash';
+import ManualClientForm from '../components/forms/ManualClientForm.jsx';
+
+const DashboardAdmin = () => {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('contacts');
+  
+  // Contact Inquiries State
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const perPage = 10;
+
+  // Client Management State
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [clientSearch, setClientSearch] = useState('');
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [showClientDetails, setShowClientDetails] = useState(false);
+
+  // Trainer Management State
+  const [trainers, setTrainers] = useState([]);
+  const [trainersLoading, setTrainersLoading] = useState(false);
+  const [showAddTrainer, setShowAddTrainer] = useState(false);
+  const [selectedTrainer, setSelectedTrainer] = useState(null);
+  const [showAssignClients, setShowAssignClients] = useState(false);
+
+  // Reports State
+  const [timeFilter, setTimeFilter] = useState('all');
+
+  // Helper function to calculate date ranges
+  const getDateRange = (period) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (period) {
+      case 'today':
+        return { start: today, end: now };
+      case '1week':
+        const oneWeekAgo = new Date(today);
+        oneWeekAgo.setDate(today.getDate() - 7);
+        return { start: oneWeekAgo, end: now };
+      case '1month':
+        const oneMonthAgo = new Date(today);
+        oneMonthAgo.setMonth(today.getMonth() - 1);
+        return { start: oneMonthAgo, end: now };
+      case '6months':
+        const sixMonthsAgo = new Date(today);
+        sixMonthsAgo.setMonth(today.getMonth() - 6);
+        return { start: sixMonthsAgo, end: now };
+      case '1year':
+        const oneYearAgo = new Date(today);
+        oneYearAgo.setFullYear(today.getFullYear() - 1);
+        return { start: oneYearAgo, end: now };
+      case 'all':
+      default:
+        return { start: new Date(0), end: now }; // From epoch to now
+    }
+  };
+
+  // Computed filtered stats using useMemo for performance
+  const filteredStats = useMemo(() => {
+    const dateRange = getDateRange(timeFilter);
+    
+    // Filter clients by creation date
+    const filteredClients = clients.filter(client => {
+      const clientDate = new Date(client.created);
+      return clientDate >= dateRange.start && clientDate <= dateRange.end;
+    });
+    
+    // Filter trainers by creation date  
+    const filteredTrainers = trainers.filter(trainer => {
+      const trainerDate = new Date(trainer.created || trainer.createdAt);
+      return trainerDate >= dateRange.start && trainerDate <= dateRange.end;
+    });
+    
+    // Filter contacts by creation date
+    const filteredContacts = contacts.filter(contact => {
+      const contactDate = new Date(contact.createdAt);
+      return contactDate >= dateRange.start && contactDate <= dateRange.end;
+    });
+    
+    return {
+      totalClients: filteredClients.length,
+      activeTrainers: filteredTrainers.filter(t => t.isActive).length,
+      newInquiries: filteredContacts.filter(c => c.status === 'New').length,
+      totalInquiries: filteredContacts.length
+    };
+  }, [clients, trainers, contacts, timeFilter]);
+
+  // Fetch contacts when tab is 'contacts' and dependencies change
+  useEffect(() => {
+    const fetchContacts = async () => {
+      if (activeTab !== 'contacts') return;
+      
+      try {
+        setLoading(true);
+        const params = new URLSearchParams({ page, perPage });
+        if (search) params.append('search', search);
+        if (statusFilter) params.append('status', statusFilter);
+        const response = await axios.get(`/contacts?${params.toString()}`);
+        setContacts(response.data.contacts);
+        setTotal(response.data.total);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load contacts.');
+        setLoading(false);
+      }
+    };
+
+    fetchContacts();
+  }, [page, search, statusFilter, activeTab, perPage]);
+
+  // Fetch clients - using useCallback because it's called from ManualClientForm
+  const fetchClients = useCallback(async () => {
+    if (activeTab !== 'clients') return;
+    
+    try {
+      setClientsLoading(true);
+      const response = await axios.get(`/auth/clients?search=${clientSearch}`);
+      setClients(response.data.clients || []);
+      setClientsLoading(false);
+    } catch (err) {
+      console.error('Failed to fetch clients:', err);
+      setClientsLoading(false);
+    }
+  }, [clientSearch, activeTab]);
+
+  // Fetch trainers
+  const fetchTrainers = async () => {
+    try {
+      setTrainersLoading(true);
+      const response = await axios.get('/auth/trainers');
+      setTrainers(response.data.trainers || []);
+      setTrainersLoading(false);
+    } catch (err) {
+      console.error('Failed to fetch trainers:', err);
+      setTrainersLoading(false);
+    }
+  };
+
+  // useEffect for fetching clients
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
+
+  // useEffect for fetching trainers
+  useEffect(() => {
+    if (activeTab === 'trainers') {
+      fetchTrainers();
+    }
+  }, [activeTab]);
+
+  // Fetch all data for reports tab
+  useEffect(() => {
+    const fetchAllData = async () => {
+      if (activeTab !== 'reports') return;
+      
+      try {
+        const [clientsRes, trainersRes, contactsRes] = await Promise.all([
+          axios.get('/auth/clients'),
+          axios.get('/auth/trainers'),
+          axios.get('/contacts?page=1&perPage=1000') // Get all contacts for stats
+        ]);
+        
+        setClients(clientsRes.data.clients || []);
+        setTrainers(trainersRes.data.trainers || []);
+        setContacts(contactsRes.data.contacts || []);
+      } catch (err) {
+        console.error('Failed to fetch data for reports:', err);
+      }
+    };
+
+    fetchAllData();
+  }, [activeTab]);
+
+  // Update contact status
+  const handleStatusChange = async (id, status) => {
+    try {
+      const response = await axios.put(`/contacts/${id}/status`, { status });
+      setContacts(
+        contacts.map((contact) =>
+          contact._id === id ? response.data : contact
+        )
+      );
+    } catch (err) {
+      setError('Failed to update status.');
+    }
+  };
+
+  // Update follow-up notes (debounced)
+  const handleNotesChange = debounce(async (id, notes) => {
+    try {
+      const response = await axios.put(`/contacts/${id}/notes`, {
+        followUpNotes: notes,
+      });
+      setContacts(
+        contacts.map((contact) =>
+          contact._id === id ? response.data : contact
+        )
+      );
+    } catch (err) {
+      setError('Failed to update notes.');
+    }
+  }, 500);
+
+  // Generate temporary password
+  const generateTempPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  // Toggle trainer status
+  const toggleTrainerStatus = async (trainerId, currentStatus) => {
+    try {
+      await axios.put(`/auth/trainer/${trainerId}/status`, {
+        isActive: !currentStatus
+      });
+      
+      // Update local state
+      setTrainers(trainers.map(trainer => 
+        trainer._id === trainerId 
+          ? { ...trainer, isActive: !currentStatus }
+          : trainer
+      ));
+    } catch (err) {
+      console.error('Failed to update trainer status:', err);
+      alert('Failed to update trainer status');
+    }
+  };
+
+  // Assign clients to trainer
+  const assignClientsToTrainer = async (trainerId, clientIds) => {
+    try {
+      await axios.put(`/auth/trainer/${trainerId}/assign-clients`, {
+        clientIds
+      });
+      
+      alert('Clients assigned successfully!');
+      setShowAssignClients(false);
+      fetchTrainers(); // Refresh the list
+      fetchClients(); // Refresh clients too
+    } catch (err) {
+      console.error('Failed to assign clients:', err);
+      alert('Failed to assign clients');
+    }
+  };
+
+  if (!user || user.role !== 'admin') {
+    return <div className="text-center text-red-500">Unauthorized access.</div>;
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      
+      {/* Tab Navigation */}
+      <div className="flex space-x-1 mb-6 border-b overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('contacts')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'contacts' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
+        >
+          Contact Inquiries
+        </button>
+        <button
+          onClick={() => setActiveTab('clients')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'clients' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
+        >
+          Client Management
+        </button>
+        <button
+          onClick={() => setActiveTab('trainers')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'trainers' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
+        >
+          Trainer Management
+        </button>
+        <button
+          onClick={() => setActiveTab('billing')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'billing' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
+        >
+          Billing
+        </button>
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`px-4 py-2 font-semibold whitespace-nowrap ${
+            activeTab === 'reports' 
+              ? 'text-blue-600 border-b-2 border-blue-600' 
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
+        >
+          Reports
+        </button>
+      </div>
+
+      {/* Content based on active tab */}
+      {activeTab === 'contacts' ? (
+        // Contact Inquiries Tab
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Contact Inquiries</h2>
+          
+          {/* Search and Filter */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="New">New</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
+
+          {/* Loading and Error States */}
+          {loading && <div className="text-center py-4">Loading...</div>}
+          {error && <div className="text-center text-red-500 py-4">{error}</div>}
+          
+          {/* Contacts Table */}
+          {!loading && !error && (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse bg-white shadow-md rounded-lg">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-3 text-left font-semibold">Name</th>
+                      <th className="p-3 text-left font-semibold">Email</th>
+                      <th className="p-3 text-left font-semibold">Phone</th>
+                      <th className="p-3 text-left font-semibold">Message</th>
+                      <th className="p-3 text-left font-semibold">Status</th>
+                      <th className="p-3 text-left font-semibold">Follow-Up Notes</th>
+                      <th className="p-3 text-left font-semibold">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contacts.map((contact, index) => (
+                      <tr
+                        key={contact._id}
+                        className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
+                      >
+                        <td className="p-3 font-medium">{contact.name}</td>
+                        <td className="p-3">{contact.email}</td>
+                        <td className="p-3">{contact.phone || 'N/A'}</td>
+                        <td className="p-3 max-w-xs truncate">{contact.message}</td>
+                        <td className="p-3">
+                          <select
+                            value={contact.status}
+                            onChange={(e) => handleStatusChange(contact._id, e.target.value)}
+                            className="text-sm border rounded px-2 py-1"
+                          >
+                            <option value="New">New</option>
+                            <option value="Contacted">Contacted</option>
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                        </td>
+                        <td className="p-3">
+                          <textarea
+                            defaultValue={contact.followUpNotes || ''}
+                            onChange={(e) => handleNotesChange(contact._id, e.target.value)}
+                            className="text-sm border rounded px-2 py-1 w-full"
+                            rows="2"
+                            placeholder="Add follow-up notes..."
+                          />
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          {new Date(contact.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination */}
+              <div className="flex justify-between items-center mt-4">
+                <button
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-gray-300"
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {page} of {Math.ceil(total / perPage)}
+                </span>
+                <button
+                  onClick={() => setPage(page + 1)}
+                  disabled={page >= Math.ceil(total / perPage)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-gray-300"
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      ) : activeTab === 'clients' ? (
+        // Client Management Tab
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Client Management</h2>
+            <button
+              onClick={() => setShowAddClient(!showAddClient)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              {showAddClient ? 'Cancel' : '+ Add New Client'}
+            </button>
+          </div>
+
+          {/* Manual Client Registration Form */}
+          {showAddClient && (
+            <div className="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-xl font-semibold mb-4">Manual Client Registration</h3>
+              <p className="text-gray-600 mb-4">
+                Use this form to manually register clients who cannot self-register online 
+                (phone registrations, walk-ins, etc.)
+              </p>
+              <ManualClientForm 
+                generateTempPassword={generateTempPassword}
+                onSuccess={() => {
+                  setShowAddClient(false);
+                  fetchClients();
+                }}
+              />
+            </div>
+          )}
+
+          {/* Client Search */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search clients by name or email..."
+              value={clientSearch}
+              onChange={(e) => setClientSearch(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Clients List */}
+          {clientsLoading ? (
+            <div className="text-center py-8">Loading clients...</div>
+          ) : (
+            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+              {clients.length > 0 ? (
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-3 text-left font-semibold">Name</th>
+                      <th className="p-3 text-left font-semibold">Email</th>
+                      <th className="p-3 text-left font-semibold">Phone</th>
+                      <th className="p-3 text-left font-semibold">Dog</th>
+                      <th className="p-3 text-left font-semibold">Trainer</th>
+                      <th className="p-3 text-left font-semibold">Registered</th>
+                      <th className="p-3 text-left font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clients
+                      .filter(client => 
+                        client.firstName?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                        client.lastName?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                        client.email?.toLowerCase().includes(clientSearch.toLowerCase())
+                      )
+                      .map((client, index) => (
+                        <tr key={client._id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                          <td className="p-3 font-medium">
+                            {client.firstName} {client.lastName}
+                          </td>
+                          <td className="p-3">{client.email}</td>
+                          <td className="p-3">{client.phone || 'N/A'}</td>
+                          <td className="p-3">
+                            {client.dogName ? `${client.dogName} (${client.dogBreed})` : 'N/A'}
+                          </td>
+                          <td className="p-3">
+                            {client.trainer ? 
+                              `${client.trainer.firstName} ${client.trainer.lastName}` : 
+                              'Unassigned'
+                            }
+                          </td>
+                          <td className="p-3 text-sm text-gray-600">
+                            {new Date(client.created).toLocaleDateString()}
+                          </td>
+                          <td className="p-3">
+                            <button
+                              onClick={() => {
+                                setSelectedClient(client);
+                                setShowClientDetails(true);
+                              }}
+                              className="text-blue-600 hover:underline text-sm"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  {clientSearch ? 'No clients found matching your search.' : 'No clients registered yet.'}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Client Details Modal */}
+          {showClientDetails && selectedClient && (
+            <ClientDetailsModal
+              client={selectedClient}
+              onClose={() => setShowClientDetails(false)}
+            />
+          )}
+        </div>
+      ) : activeTab === 'trainers' ? (
+        // Trainer Management Tab
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Trainer Management</h2>
+            <button
+              onClick={() => setShowAddTrainer(!showAddTrainer)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              {showAddTrainer ? 'Cancel' : '+ Add New Trainer'}
+            </button>
+          </div>
+
+          {/* Add Trainer Form */}
+          {showAddTrainer && (
+            <div className="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-xl font-semibold mb-4">Add New Trainer</h3>
+              <p className="text-gray-600 mb-4">
+                You can direct trainers to self-register or manually add them here.
+              </p>
+              <button
+                onClick={() => window.open('/trainer/register', '_blank')}
+                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+              >
+                Open Trainer Registration Form
+              </button>
+            </div>
+          )}
+
+          {/* Trainers List */}
+          {trainersLoading ? (
+            <div className="text-center py-8">Loading trainers...</div>
+          ) : (
+            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+              {trainers.length > 0 ? (
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-3 text-left font-semibold">Name</th>
+                      <th className="p-3 text-left font-semibold">Email</th>
+                      <th className="p-3 text-left font-semibold">Phone</th>
+                      <th className="p-3 text-left font-semibold">Specialties</th>
+                      <th className="p-3 text-left font-semibold">Clients</th>
+                      <th className="p-3 text-left font-semibold">Status</th>
+                      <th className="p-3 text-left font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trainers.map((trainer, index) => (
+                      <tr key={trainer._id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                        <td className="p-3">{`${trainer.firstName} ${trainer.lastName}`}</td>
+                        <td className="p-3">{trainer.email}</td>
+                        <td className="p-3">{trainer.phone || 'N/A'}</td>
+                        <td className="p-3">
+                          <div className="text-sm">
+                            {trainer.specialties?.join(', ') || 'None specified'}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span className="font-semibold">{trainer.clients?.length || 0}</span> clients
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            trainer.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {trainer.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => toggleTrainerStatus(trainer._id, trainer.isActive)}
+                              className={`text-sm px-2 py-1 rounded ${
+                                trainer.isActive 
+                                  ? 'bg-red-500 text-white hover:bg-red-600' 
+                                  : 'bg-green-500 text-white hover:bg-green-600'
+                              }`}
+                            >
+                              {trainer.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedTrainer(trainer);
+                                setShowAssignClients(true);
+                              }}
+                              className="text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                              Assign Clients
+                            </button>
+                            <button className="text-blue-600 hover:underline text-sm">
+                              View Details
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  No trainers registered yet.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Assign Clients Modal */}
+          {showAssignClients && selectedTrainer && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
+                <h3 className="text-xl font-semibold mb-4">
+                  Assign Clients to {selectedTrainer.firstName} {selectedTrainer.lastName}
+                </h3>
+                <ClientAssignmentForm
+                  trainer={selectedTrainer}
+                  clients={clients}
+                  onAssign={assignClientsToTrainer}
+                  onCancel={() => setShowAssignClients(false)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'billing' ? (
+        // Billing Tab
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Billing & Payments</h2>
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <p className="text-gray-600">Billing and payment tracking features coming soon...</p>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900">Total Revenue</h3>
+                <p className="text-2xl font-bold text-blue-600">$0.00</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-green-900">Paid This Month</h3>
+                <p className="text-2xl font-bold text-green-600">$0.00</p>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-yellow-900">Outstanding</h3>
+                <p className="text-2xl font-bold text-yellow-600">$0.00</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : activeTab === 'reports' ? (
+        // Reports Tab
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Reports & Analytics</h2>
+          <div className="bg-white shadow-md rounded-lg p-6">
+            
+            {/* Time Filter Dropdown */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Time Period
+              </label>
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className="w-48 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="today">Today</option>
+                <option value="1week">Last 7 Days</option>
+                <option value="1month">Last Month</option>
+                <option value="6months">Last 6 Months</option>
+                <option value="1year">Last Year</option>
+                <option value="all">All Time</option>
+              </select>
+            </div>
+
+            {/* Quick Stats with filtered data */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="border rounded-lg p-4 bg-blue-50">
+                <h3 className="font-semibold mb-2 text-blue-900">Total Clients</h3>
+                <p className="text-2xl font-bold text-blue-600">{filteredStats.totalClients}</p>
+                <p className="text-sm text-blue-700 mt-1">
+                  {timeFilter === 'all' ? 'All time' : `In selected period`}
+                </p>
+              </div>
+              
+              <div className="border rounded-lg p-4 bg-green-50">
+                <h3 className="font-semibold mb-2 text-green-900">Active Trainers</h3>
+                <p className="text-2xl font-bold text-green-600">{filteredStats.activeTrainers}</p>
+                <p className="text-sm text-green-700 mt-1">
+                  {timeFilter === 'all' ? 'Currently active' : `Joined in period`}
+                </p>
+              </div>
+              
+              <div className="border rounded-lg p-4 bg-yellow-50">
+                <h3 className="font-semibold mb-2 text-yellow-900">New Inquiries</h3>
+                <p className="text-2xl font-bold text-yellow-600">{filteredStats.newInquiries}</p>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Status: New
+                </p>
+              </div>
+              
+              <div className="border rounded-lg p-4 bg-purple-50">
+                <h3 className="font-semibold mb-2 text-purple-900">Total Inquiries</h3>
+                <p className="text-2xl font-bold text-purple-600">{filteredStats.totalInquiries}</p>
+                <p className="text-sm text-purple-700 mt-1">
+                  All statuses
+                </p>
+              </div>
+            </div>
+
+            {/* Available Reports Section */}
+            <div className="border-t pt-6">
+              <h3 className="font-semibold mb-4 text-gray-800">Available Reports</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-2">Growth Reports</h4>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    <li>• Client Growth Over Time</li>
+                    <li>• Trainer Onboarding Rate</li>
+                    <li>• Inquiry Conversion Rate</li>
+                  </ul>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-2">Performance Reports</h4>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    <li>• Trainer Performance Summary</li>
+                    <li>• Client Satisfaction Metrics</li>
+                    <li>• Revenue Analysis</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+// Client Details Modal Component
+const ClientDetailsModal = ({ client, onClose }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Client Details</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {/* Personal Information */}
+          <div className="border-b pb-4">
+            <h4 className="font-semibold mb-2">Personal Information</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Name:</span>
+                <p className="font-medium">{client.firstName} {client.lastName}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Email:</span>
+                <p className="font-medium">{client.email}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Phone:</span>
+                <p className="font-medium">{client.phone || 'Not provided'}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Address:</span>
+                <p className="font-medium">{client.address || 'Not provided'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Dog Information */}
+          <div className="border-b pb-4">
+            <h4 className="font-semibold mb-2">Dog Information</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Dog Name:</span>
+                <p className="font-medium">{client.dogName || 'Not specified'}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Breed:</span>
+                <p className="font-medium">{client.dogBreed || 'Not specified'}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Age:</span>
+                <p className="font-medium">{client.dogAge || 'Not specified'}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Training Goals:</span>
+                <p className="font-medium">
+                  {client.trainingGoals?.length > 0 ? 
+                    client.trainingGoals.map(goal => 
+                      goal.replace(/([A-Z])/g, ' $1').trim()
+                    ).join(', ')
+                    : 'None specified'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Trainer Assignment */}
+          <div className="border-b pb-4">
+            <h4 className="font-semibold mb-2">Trainer Assignment</h4>
+            <div className="text-sm">
+              {client.trainer ? (
+                <p>
+                  Assigned to: <span className="font-medium">
+                    {client.trainer.firstName} {client.trainer.lastName}
+                  </span>
+                </p>
+              ) : (
+                <p className="text-gray-500">No trainer assigned</p>
+              )}
+            </div>
+          </div>
+
+          {/* Registration Info */}
+          <div className="border-b pb-4">
+            <h4 className="font-semibold mb-2">Registration Information</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Registered:</span>
+                <p className="font-medium">{new Date(client.created).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Registration Method:</span>
+                <p className="font-medium">
+                  {client.adminNotes?.registrationMethod || 'Self-registered'}
+                </p>
+              </div>
+            </div>
+            {client.adminNotes?.registrationNotes && (
+              <div className="mt-2">
+                <span className="text-gray-600 text-sm">Admin Notes:</span>
+                <p className="text-sm mt-1 p-2 bg-gray-50 rounded">
+                  {client.adminNotes.registrationNotes}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              onClick={() => {
+                // Add edit functionality here
+                alert('Edit functionality coming soon!');
+              }}
+              className="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
+            >
+              Edit Client
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Client Assignment Form Component
+const ClientAssignmentForm = ({ trainer, clients, onAssign, onCancel }) => {
+  const [selectedClients, setSelectedClients] = useState(
+    trainer.clients?.map(c => c._id || c) || []
+  );
+
+  const handleToggleClient = (clientId) => {
+    setSelectedClients(prev => 
+      prev.includes(clientId)
+        ? prev.filter(id => id !== clientId)
+        : [...prev, clientId]
+    );
+  };
+
+  const handleSubmit = () => {
+    onAssign(trainer._id, selectedClients);
+  };
+
+  return (
+    <div>
+      <div className="mb-4">
+        <p className="text-gray-600">
+          Current clients: {trainer.clients?.length || 0}
+        </p>
+      </div>
+      
+      <div className="border rounded-lg max-h-96 overflow-y-auto mb-4">
+        {clients.map(client => (
+          <label
+            key={client._id}
+            className="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b"
+          >
+            <input
+              type="checkbox"
+              checked={selectedClients.includes(client._id)}
+              onChange={() => handleToggleClient(client._id)}
+              className="mr-3"
+            />
+            <div className="flex-1">
+              <div className="font-semibold">
+                {client.firstName} {client.lastName}
+              </div>
+              <div className="text-sm text-gray-600">{client.email}</div>
+            </div>
+            {client.trainer === trainer._id && (
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                Currently assigned
+              </span>
+            )}
+          </label>
+        ))}
+      </div>
+      
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+        >
+          Save Assignments
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardAdmin;
