@@ -1,4 +1,3 @@
-// src/components/admin/ContactsTab.jsx
 import React, { useState, useEffect } from 'react';
 import axios from '../../axios.js';
 
@@ -22,13 +21,25 @@ const ContactsTab = () => {
       const params = new URLSearchParams({ page, perPage });
       if (search) params.append('search', search);
       if (statusFilter) params.append('status', statusFilter);
+      
       const response = await axios.get(`/contacts?${params.toString()}`);
-      setContacts(response.data.contacts);
-      setTotal(response.data.total);
+      setContacts(response.data.contacts || []);
+      setTotal(response.data.total || 0);
       setLoading(false);
     } catch (err) {
+      console.error('Error fetching contacts:', err);
       setError('Failed to load contacts.');
       setLoading(false);
+    }
+  };
+
+  const updateContactStatus = async (contactId, newStatus) => {
+    try {
+      await axios.put(`/contacts/${contactId}`, { status: newStatus });
+      fetchContacts(); // Refresh the list
+    } catch (err) {
+      console.error('Error updating contact status:', err);
+      alert('Failed to update contact status');
     }
   };
 
@@ -67,6 +78,32 @@ const ContactsTab = () => {
         </select>
       </div>
 
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-blue-50 p-3 rounded-lg">
+          <h3 className="font-semibold text-blue-900 text-sm">Total</h3>
+          <p className="text-xl font-bold text-blue-600">{total}</p>
+        </div>
+        <div className="bg-yellow-50 p-3 rounded-lg">
+          <h3 className="font-semibold text-yellow-900 text-sm">New</h3>
+          <p className="text-xl font-bold text-yellow-600">
+            {contacts.filter(c => c.status === 'New').length}
+          </p>
+        </div>
+        <div className="bg-green-50 p-3 rounded-lg">
+          <h3 className="font-semibold text-green-900 text-sm">Contacted</h3>
+          <p className="text-xl font-bold text-green-600">
+            {contacts.filter(c => c.status === 'Contacted').length}
+          </p>
+        </div>
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <h3 className="font-semibold text-gray-900 text-sm">Closed</h3>
+          <p className="text-xl font-bold text-gray-600">
+            {contacts.filter(c => c.status === 'Closed').length}
+          </p>
+        </div>
+      </div>
+
       {/* Contacts Table */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse bg-white shadow-md rounded-lg">
@@ -78,6 +115,7 @@ const ContactsTab = () => {
               <th className="p-3 text-left font-semibold">Message</th>
               <th className="p-3 text-left font-semibold">Status</th>
               <th className="p-3 text-left font-semibold">Created</th>
+              <th className="p-3 text-left font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -89,18 +127,35 @@ const ContactsTab = () => {
                 <td className="p-3">{contact.name}</td>
                 <td className="p-3">{contact.email}</td>
                 <td className="p-3">{contact.phone || 'N/A'}</td>
-                <td className="p-3 max-w-xs truncate">{contact.message}</td>
+                <td className="p-3 max-w-xs truncate" title={contact.message}>
+                  {contact.message}
+                </td>
                 <td className="p-3">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    contact.status === 'New' ? 'bg-blue-100 text-blue-800' :
-                    contact.status === 'Contacted' ? 'bg-yellow-100 text-yellow-800' :
-                    contact.status === 'Scheduled' ? 'bg-green-100 text-green-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {contact.status}
-                  </span>
+                  <select
+                    value={contact.status}
+                    onChange={(e) => updateContactStatus(contact._id, e.target.value)}
+                    className={`px-2 py-1 rounded text-xs border-0 ${
+                      contact.status === 'New' ? 'bg-blue-100 text-blue-800' :
+                      contact.status === 'Contacted' ? 'bg-yellow-100 text-yellow-800' :
+                      contact.status === 'Scheduled' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    <option value="New">New</option>
+                    <option value="Contacted">Contacted</option>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Closed">Closed</option>
+                  </select>
                 </td>
                 <td className="p-3">{new Date(contact.createdAt).toLocaleDateString()}</td>
+                <td className="p-3">
+                  
+                    href={`mailto:${contact.email}`}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Email
+                  </a>
+                </td>
               </tr>
             ))}
           </tbody>
