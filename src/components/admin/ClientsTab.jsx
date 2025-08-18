@@ -1,3 +1,4 @@
+// src/components/admin/ClientsTab.jsx
 import React, { useState, useEffect } from 'react';
 import axios from '../../axios.js';
 import ManualClientForm from '../forms/ManualClientForm.jsx';
@@ -17,8 +18,8 @@ const ClientsTab = () => {
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/auth/users/client');
-      setClients(response.data);
+      const response = await axios.get('/auth/clients');
+      setClients(response.data.clients || []);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching clients:', err);
@@ -63,6 +64,7 @@ const ClientsTab = () => {
               <th className="p-3 text-left font-semibold">Email</th>
               <th className="p-3 text-left font-semibold">Phone</th>
               <th className="p-3 text-left font-semibold">Status</th>
+              <th className="p-3 text-left font-semibold">Registered</th>
               <th className="p-3 text-left font-semibold">Actions</th>
             </tr>
           </thead>
@@ -78,6 +80,9 @@ const ClientsTab = () => {
                   }`}>
                     {client.isActive ? 'Active' : 'Inactive'}
                   </span>
+                </td>
+                <td className="p-3">
+                  {client.createdAt ? new Date(client.createdAt).toLocaleDateString() : 'N/A'}
                 </td>
                 <td className="p-3">
                   <button
@@ -141,6 +146,10 @@ const ClientsTab = () => {
               <div>
                 <label className="font-semibold">Status:</label>
                 <p>{selectedClient.isActive ? 'Active' : 'Inactive'}</p>
+              </div>
+              <div>
+                <label className="font-semibold">Registered:</label>
+                <p>{selectedClient.createdAt ? new Date(selectedClient.createdAt).toLocaleDateString() : 'N/A'}</p>
               </div>
             </div>
           </div>
