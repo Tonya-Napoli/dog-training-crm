@@ -4,27 +4,20 @@ import axios from '../../axios.js';
 
 const TrainersTab = () => {
   const [trainers, setTrainers] = useState([]);
-  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [expandedTrainer, setExpandedTrainer] = useState(null);
 
   useEffect(() => {
-    fetchData();
+    fetchTrainers();
   }, []);
 
-  const fetchData = async () => {
+  const fetchTrainers = async () => {
     try {
       setLoading(true);
-      const [trainersRes, clientsRes] = await Promise.all([
-        axios.get('/auth/users/trainer'),
-        axios.get('/auth/users/client')
-      ]);
-      
-      setTrainers(trainersRes.data);
-      setClients(clientsRes.data);
+      const response = await axios.get('/auth/trainers');
+      setTrainers(response.data.trainers || []);
       setLoading(false);
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error('Error fetching trainers:', err);
       setLoading(false);
     }
   };
@@ -58,6 +51,7 @@ const TrainersTab = () => {
               <th className="p-3 text-left font-semibold">Email</th>
               <th className="p-3 text-left font-semibold">Specialties</th>
               <th className="p-3 text-left font-semibold">Status</th>
+              <th className="p-3 text-left font-semibold">Joined</th>
               <th className="p-3 text-left font-semibold">Actions</th>
             </tr>
           </thead>
@@ -79,6 +73,9 @@ const TrainersTab = () => {
                   }`}>
                     {trainer.isActive ? 'Active' : 'Inactive'}
                   </span>
+                </td>
+                <td className="p-3">
+                  {trainer.createdAt ? new Date(trainer.createdAt).toLocaleDateString() : 'N/A'}
                 </td>
                 <td className="p-3">
                   <button
