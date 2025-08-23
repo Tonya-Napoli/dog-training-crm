@@ -1,4 +1,3 @@
-// src/components/admin/TimeFilter.jsx
 import React from 'react';
 import { TIME_PERIODS } from '../../constants/adminConstants';
 
