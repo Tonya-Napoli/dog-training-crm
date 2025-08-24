@@ -5,6 +5,8 @@ const TrainerInvites = () => {
   const [invites, setInvites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showInviteForm, setShowInviteForm] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [inviteToRevoke, setInviteToRevoke] = useState(null);
   const [inviteData, setInviteData] = useState({
     email: '',
     notes: ''
@@ -48,16 +50,28 @@ const TrainerInvites = () => {
     }
   };
 
-  const revokeInvite = async (inviteId) => {
-    if (!confirm('Are you sure you want to revoke this invite?')) return;
+  const handleRevokeClick = (invite) => {
+    setInviteToRevoke(invite);
+    setShowConfirmModal(true);
+  };
+
+  const confirmRevoke = async () => {
+    if (!inviteToRevoke) return;
     
     try {
-      await axios.delete(`/auth/trainer-invite/${inviteId}`);
+      await axios.delete(`/auth/trainer-invite/${inviteToRevoke._id}`);
       alert('Invite revoked successfully!');
+      setShowConfirmModal(false);
+      setInviteToRevoke(null);
       fetchInvites();
     } catch (err) {
       alert('Failed to revoke invite');
     }
+  };
+
+  const cancelRevoke = () => {
+    setShowConfirmModal(false);
+    setInviteToRevoke(null);
   };
 
   if (loading) return <div>Loading trainer invites...</div>;
@@ -120,6 +134,33 @@ const TrainerInvites = () => {
         </div>
       )}
 
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Confirm Revocation</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to revoke the invitation for <strong>{inviteToRevoke?.email}</strong>? 
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={confirmRevoke}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              >
+                Yes, Revoke
+              </button>
+              <button
+                onClick={cancelRevoke}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Invites List */}
       <div className="bg-white rounded-lg shadow">
         <table className="w-full">
@@ -157,7 +198,7 @@ const TrainerInvites = () => {
                         Resend
                       </button>
                       <button
-                        onClick={() => revokeInvite(invite._id)}
+                        onClick={() => handleRevokeClick(invite)}
                         className="text-red-600 hover:text-red-800 text-sm"
                       >
                         Revoke
