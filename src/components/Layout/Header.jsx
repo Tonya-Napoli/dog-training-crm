@@ -1,4 +1,3 @@
-// src/components/Layout/Header.jsx
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,23 +6,16 @@ const Header = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isRegisterDropdownOpen, setIsRegisterDropdownOpen] = useState(false);
+  // Removed unused isRegisterDropdownOpen and setIsRegisterDropdownOpen
 
   return (
-    <header className="bg-primary text-white p-4 shadow-md">
-      <div className="container mx-auto">
-        <div className="flex items-center justify-between">
-          {/* Logo and Title */}
-          <div className="flex items-center space-x-4">
-            <Link to="/" className="flex items-center space-x-4">
-              <img
-                src="/pp-logo-removebg-preview.png"
-                alt="Puppy Pros Training Logo"
-                className="w-16 h-16"
-              />
-              <h1 className="text-xl font-bold">Puppy Pros Training</h1>
-            </Link>
-          </div>
+    <header className="bg-primary text-white shadow-md sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center py-4">
+          {/* Logo */}
+          <Link to="/" className="flex items-center">
+            <h1 className="text-2xl font-bold">Puppy Pros Training</h1>
+          </Link>
 
           {/* Hamburger Menu for Mobile */}
           <button
@@ -110,49 +102,13 @@ const Header = () => {
             {/* Non-authenticated User Links */}
             {!user && (
               <>
-                {/* Register Dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => setIsRegisterDropdownOpen(!isRegisterDropdownOpen)}
-                    onBlur={() => setTimeout(() => setIsRegisterDropdownOpen(false), 200)}
-                    className="hover:text-gray-200 transition duration-300 flex items-center"
-                  >
-                    Register
-                    <svg
-                      className={`ml-1 w-4 h-4 transition-transform ${
-                        isRegisterDropdownOpen ? 'rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  
-                  {/* Dropdown Menu */}
-                  {isRegisterDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
-                      <Link
-                        to="/client/register"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Register as Client
-                      </Link>
-                      <Link
-                        to="/trainer/register"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Register as Trainer
-                      </Link>
-                    </div>
-                  )}
-                </div>
+                {/* Client Registration Link (No dropdown needed anymore) */}
+                <Link
+                  to="/client/register"
+                  className="hover:text-gray-200 transition duration-300"
+                >
+                  Register
+                </Link>
 
                 {/* Login Button */}
                 {location.pathname !== '/login' && (
@@ -271,15 +227,6 @@ const Header = () => {
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Register as Client
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/trainer/register"
-                      className="block hover:text-gray-200 transition duration-300"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Register as Trainer
                     </Link>
                   </li>
                   {location.pathname !== '/login' && (

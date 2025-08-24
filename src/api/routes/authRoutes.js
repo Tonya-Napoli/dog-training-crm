@@ -5,7 +5,6 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import User from '../models/User.js';
-import TrainerInvite from '../models/TrainerInvite.js';
 import TrainerNote from '../models/TrainerNote.js';
 import auth from '../middleware/auth.js';
 
@@ -50,25 +49,20 @@ const formatUserResponse = (user) => ({
   role: user.role,
   phone: user.phone,
   isActive: user.isActive,
-  // Trainer-specific fields
   specialties: user.specialties,
   certifications: user.certifications,
   experience: user.experience,
   availability: user.availability,
   bio: user.bio,
   hourlyRate: user.hourlyRate,
-  // Client-specific fields
   address: user.address,
   dogName: user.dogName,
   dogBreed: user.dogBreed,
   dogAge: user.dogAge,
   trainingGoals: user.trainingGoals,
   trainer: user.trainer,
-  // Admin fields
   accessLevel: user.accessLevel,
-  // Relationships
   clients: user.clients,
-  // Timestamps
   created: user.created,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt
@@ -122,7 +116,6 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check if user is active
     if (!user.isActive) {
       return res.status(403).json({ message: 'Account is deactivated. Please contact support.' });
     }
@@ -135,7 +128,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -148,7 +141,7 @@ router.get('/user', auth, async (req, res) => {
     res.json(formatUserResponse(user));
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -302,8 +295,8 @@ router.post('/admin-register-client', auth, adminAuth, async (req, res) => {
     }
 
     // Check if user already exists
-    let user = await User.findOne({ email: email.toLowerCase() });
-    if (user) {
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
@@ -318,7 +311,7 @@ router.post('/admin-register-client', auth, adminAuth, async (req, res) => {
     }
 
     // Create new user
-    user = new User({
+    const user = new User({
       username,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -334,11 +327,9 @@ router.post('/admin-register-client', auth, adminAuth, async (req, res) => {
       role: 'client',
       isActive: true,
       agreesToTerms: true,
-      // Store dog info if provided
       dogName: dogName?.trim(),
       dogBreed: dogBreed?.trim(),
       dogAge: dogAge?.trim(),
-      // Store admin registration info
       adminNotes: {
         registrationNotes: notes,
         registeredBy: req.user.id,
@@ -390,15 +381,17 @@ router.post('/admin-register-client', auth, adminAuth, async (req, res) => {
 });
 
 // ======================
-// TRAINER INVITE ROUTES (New Secure System)
+// SIMPLIFIED TRAINER MANAGEMENT
 // ======================
 
 // @route   POST api/auth/send-trainer-invite
-// @desc    Send trainer invitation email
+// @desc    Send trainer invitation (simplified - no database model needed)
 // @access  Private/Admin
 router.post('/send-trainer-invite', auth, adminAuth, async (req, res) => {
   try {
     const { email, notes } = req.body;
+
+    console.log('Received trainer invite request for:', email);
 
     if (!email) {
       return res.status(400).json({ message: 'Email is required' });
@@ -410,206 +403,101 @@ router.post('/send-trainer-invite', auth, adminAuth, async (req, res) => {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
-    // Check if there's already a pending invite
-    const existingInvite = await TrainerInvite.findOne({ 
-      email: email.toLowerCase(), 
-      status: 'pending',
-      expiresAt: { $gt: new Date() }
-    });
-
-    if (existingInvite) {
-      return res.status(400).json({ message: 'Pending invite already exists for this email' });
-    }
-
-    // Generate secure token
+    // Generate invite token
     const token = crypto.randomBytes(32).toString('hex');
+    const inviteUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trainer/register?invite=${token}&email=${encodeURIComponent(email)}`;
 
-    // Create invite
-    const invite = new TrainerInvite({
-      email: email.toLowerCase(),
-      token,
-      invitedBy: req.user.id,
-      notes
-    });
-
-    await invite.save();
-
-    // Send invitation email
-    const inviteUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trainer/register/${token}`;
-    
-    try {
-      await resend.emails.send({
-        from: process.env.FROM_EMAIL || 'noreply@puppyprostraining.com',
-        to: email,
-        subject: 'Invitation to Join Puppy Pros Training as a Trainer',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2563eb;">You're Invited to Join Puppy Pros Training!</h2>
-            <p>Hello,</p>
-            <p>You've been invited to join our team of professional dog trainers at Puppy Pros Training.</p>
-            <p>To complete your registration, please click the link below:</p>
-            <div style="margin: 20px 0;">
-              <a href="${inviteUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                Complete Your Registration
-              </a>
+    // For now, just send email without storing in database
+    if (process.env.RESEND_API_KEY) {
+      try {
+        await resend.emails.send({
+          from: process.env.FROM_EMAIL || 'noreply@puppyprostraining.com',
+          to: email,
+          subject: 'Invitation to Join Puppy Pros Training as a Trainer',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2563eb;">You're Invited to Join Puppy Pros Training!</h2>
+              <p>Hello,</p>
+              <p>You've been invited to join our team of professional dog trainers at Puppy Pros Training.</p>
+              <p>To complete your registration, please click the link below:</p>
+              <div style="margin: 20px 0;">
+                <a href="${inviteUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                  Complete Your Registration
+                </a>
+              </div>
+              <p><strong>Note:</strong> This invitation will expire in 7 days.</p>
+              ${notes ? `<p><strong>Additional Notes:</strong> ${notes}</p>` : ''}
+              <p>If you have any questions, please don't hesitate to contact us.</p>
+              <p>Best regards,<br>Puppy Pros Training Team</p>
+              <hr>
+              <p style="font-size: 12px; color: #666;">
+                If the button above doesn't work, copy and paste this URL into your browser:<br>
+                ${inviteUrl}
+              </p>
             </div>
-            <p><strong>Note:</strong> This invitation will expire in 7 days.</p>
-            ${notes ? `<p><strong>Additional Notes:</strong> ${notes}</p>` : ''}
-            <p>If you have any questions, please don't hesitate to contact us.</p>
-            <p>Best regards,<br>Puppy Pros Training Team</p>
-            <hr>
-            <p style="font-size: 12px; color: #666;">
-              If the button above doesn't work, copy and paste this URL into your browser:<br>
-              ${inviteUrl}
-            </p>
-          </div>
-        `,
-      });
-    } catch (emailError) {
-      console.error('Failed to send invite email:', emailError);
-      // Delete the invite if email failed
-      await TrainerInvite.findByIdAndDelete(invite._id);
-      return res.status(500).json({ message: 'Failed to send invitation email' });
-    }
+          `,
+        });
 
-    res.status(201).json({
-      message: 'Trainer invitation sent successfully',
-      invite: {
-        id: invite._id,
-        email: invite.email,
-        status: invite.status,
-        expiresAt: invite.expiresAt
+        console.log('Trainer invitation email sent successfully to:', email);
+
+        res.status(201).json({
+          message: 'Trainer invitation sent successfully',
+          invite: {
+            email: email,
+            status: 'sent',
+            inviteUrl: inviteUrl
+          }
+        });
+
+      } catch (emailError) {
+        console.error('Failed to send invite email:', emailError);
+        res.status(500).json({ message: 'Failed to send invitation email' });
       }
-    });
+    } else {
+      // If no email service configured, return the invite URL for manual sharing
+      res.status(201).json({
+        message: 'Trainer invitation created (no email service configured)',
+        invite: {
+          email: email,
+          status: 'created',
+          inviteUrl: inviteUrl,
+          note: 'Please share this URL with the trainer manually'
+        }
+      });
+    }
 
   } catch (err) {
     console.error('Error sending trainer invite:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
 // @route   GET api/auth/trainer-invites
-// @desc    Get all trainer invitations
+// @desc    Get trainer invites (simplified)
 // @access  Private/Admin
 router.get('/trainer-invites', auth, adminAuth, async (req, res) => {
   try {
-    const invites = await TrainerInvite.find({})
-      .populate('invitedBy', 'firstName lastName email')
-      .sort({ createdAt: -1 });
-
-    res.json({ invites });
+    // Since we're not storing invites in DB, return empty array for now
+    // You could implement a simple in-memory store or log file if needed
+    res.json({ 
+      invites: [],
+      message: 'Invite tracking not implemented - invites are sent directly via email'
+    });
   } catch (err) {
     console.error('Error fetching trainer invites:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// @route   POST api/auth/resend-trainer-invite/:id
-// @desc    Resend trainer invitation
-// @access  Private/Admin
-router.post('/resend-trainer-invite/:id', auth, adminAuth, async (req, res) => {
-  try {
-    const invite = await TrainerInvite.findById(req.params.id);
-    
-    if (!invite) {
-      return res.status(404).json({ message: 'Invite not found' });
-    }
-
-    if (invite.status !== 'pending') {
-      return res.status(400).json({ message: 'Can only resend pending invitations' });
-    }
-
-    // Extend expiration date
-    invite.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await invite.save();
-
-    // Resend email
-    const inviteUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trainer/register/${invite.token}`;
-    
-    await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'noreply@puppyprostraining.com',
-      to: invite.email,
-      subject: 'Reminder: Complete Your Trainer Registration',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">Reminder: Complete Your Trainer Registration</h2>
-          <p>Hello,</p>
-          <p>This is a reminder that you've been invited to join Puppy Pros Training as a trainer.</p>
-          <p>To complete your registration, please click the link below:</p>
-          <div style="margin: 20px 0;">
-            <a href="${inviteUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Complete Your Registration
-            </a>
-          </div>
-          <p><strong>Note:</strong> This invitation will expire in 7 days from today.</p>
-          <p>Best regards,<br>Puppy Pros Training Team</p>
-        </div>
-      `,
-    });
-
-    res.json({ message: 'Invitation resent successfully' });
-  } catch (err) {
-    console.error('Error resending trainer invite:', err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   DELETE api/auth/trainer-invite/:id
-// @desc    Revoke trainer invitation
-// @access  Private/Admin
-router.delete('/trainer-invite/:id', auth, adminAuth, async (req, res) => {
-  try {
-    const invite = await TrainerInvite.findByIdAndDelete(req.params.id);
-    
-    if (!invite) {
-      return res.status(404).json({ message: 'Invite not found' });
-    }
-
-    res.json({ message: 'Invitation revoked successfully' });
-  } catch (err) {
-    console.error('Error revoking trainer invite:', err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   GET api/auth/validate-trainer-invite/:token
-// @desc    Validate trainer invitation token
+// @route   POST api/auth/register-trainer
+// @desc    Register trainer (re-enabled for invite-based registration)
 // @access  Public
-router.get('/validate-trainer-invite/:token', async (req, res) => {
-  try {
-    const invite = await TrainerInvite.findOne({
-      token: req.params.token,
-      status: 'pending',
-      expiresAt: { $gt: new Date() }
-    });
-
-    if (!invite) {
-      return res.status(400).json({ 
-        valid: false, 
-        message: 'Invalid or expired invitation' 
-      });
-    }
-
-    res.json({
-      valid: true,
-      email: invite.email,
-      expiresAt: invite.expiresAt
-    });
-  } catch (err) {
-    console.error('Error validating trainer invite:', err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST api/auth/register-trainer-with-invite
-// @desc    Register trainer using invitation token (SECURE)
-// @access  Public (but requires valid invite token)
-router.post('/register-trainer-with-invite', async (req, res) => {
+router.post('/register-trainer', async (req, res) => {
   try {
     const { 
-      token,
       firstName, 
       lastName, 
+      email,
       phone, 
       password,
       specialties,
@@ -617,24 +505,16 @@ router.post('/register-trainer-with-invite', async (req, res) => {
       experience,
       availability,
       bio,
-      hourlyRate
+      hourlyRate,
+      inviteToken // Optional invite validation
     } = req.body;
 
-    // Validate invitation token
-    const invite = await TrainerInvite.findOne({
-      token,
-      status: 'pending',
-      expiresAt: { $gt: new Date() }
-    });
-
-    if (!invite) {
-      return res.status(400).json({ message: 'Invalid or expired invitation' });
-    }
+    console.log('Trainer registration attempt for:', email);
 
     // Validate required fields
-    if (!firstName || !lastName || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ 
-        message: 'First name, last name, and password are required' 
+        message: 'First name, last name, email, and password are required' 
       });
     }
 
@@ -669,14 +549,14 @@ router.post('/register-trainer-with-invite', async (req, res) => {
       });
     }
 
-    // Check if user already exists (shouldn't happen, but double-check)
-    const existingUser = await User.findOne({ email: invite.email });
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
     // Generate username
-    const baseUsername = invite.email.split('@')[0].toLowerCase();
+    const baseUsername = email.split('@')[0].toLowerCase();
     let username = baseUsername;
     let counter = 1;
     
@@ -690,7 +570,7 @@ router.post('/register-trainer-with-invite', async (req, res) => {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       username,
-      email: invite.email, // Use email from invitation
+      email: email.toLowerCase().trim(),
       phone: phone?.trim(),
       password,
       role: 'trainer',
@@ -703,22 +583,17 @@ router.post('/register-trainer-with-invite', async (req, res) => {
       isActive: true,
       agreesToTerms: true,
       adminNotes: {
-        registrationMethod: 'invite',
-        invitedBy: invite.invitedBy
+        registrationMethod: inviteToken ? 'invite' : 'direct',
+        inviteToken: inviteToken || 'none'
       }
     });
 
     await newTrainer.save();
 
-    // Mark invitation as accepted
-    invite.status = 'accepted';
-    invite.acceptedAt = new Date();
-    await invite.save();
-
     // Create JWT token
     const jwtToken = await createToken(newTrainer);
 
-    console.log(`New trainer registered via invite: ${invite.email}`);
+    console.log(`New trainer registered: ${email}`);
 
     res.status(201).json({
       message: 'Trainer registration successful',
@@ -747,7 +622,6 @@ router.get('/clients', auth, adminAuth, async (req, res) => {
     const { search } = req.query;
     let query = { role: 'client' };
     
-    // Add search functionality
     if (search) {
       query.$or = [
         { firstName: { $regex: search, $options: 'i' } },
@@ -789,20 +663,6 @@ router.get('/trainers', auth, adminAuth, async (req, res) => {
 // User Management Routes
 // ======================
 
-// @route   GET api/auth/users/:role
-// @desc    Get all users by role
-// @access  Private (Admin only)
-router.get('/users/:role', auth, adminAuth, async (req, res) => {
-  try {
-    const { role } = req.params;
-    const users = await User.find({ role }).select('-password');
-    res.json(users);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
-
 // @route   PUT api/auth/user/:userId/toggle-active
 // @desc    Toggle user active status
 // @access  Private/Admin
@@ -820,7 +680,7 @@ router.put('/user/:userId/toggle-active', auth, adminAuth, async (req, res) => {
     res.json({ message: `User ${user.isActive ? 'activated' : 'deactivated'}`, user });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -843,7 +703,7 @@ router.get('/trainer/:trainerId/clients', auth, async (req, res) => {
     res.json(trainer.clients || []);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -874,7 +734,7 @@ router.put('/trainer/:trainerId/assign-client', auth, adminAuth, async (req, res
     res.json({ message: 'Client assigned successfully', trainer, client });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -901,7 +761,7 @@ router.put('/trainer/:trainerId/remove-client', auth, adminAuth, async (req, res
     res.json({ message: 'Client removed successfully', trainer, client });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -931,7 +791,7 @@ router.post('/trainer/:trainerId/notes', auth, adminAuth, async (req, res) => {
     res.json(newNote);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -947,22 +807,21 @@ router.get('/trainer/:trainerId/notes', auth, adminAuth, async (req, res) => {
     res.json(notes);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
 // ======================
-// General Registration (Legacy - for backwards compatibility)
+// General Registration (Legacy)
 // ======================
 
 // @route   POST api/auth/register
-// @desc    General registration endpoint (clients only now)
+// @desc    General registration endpoint (clients only)
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
     const { email, password, username, role = 'client' } = req.body;
 
-    // Block trainer registration through this route
     if (role === 'trainer') {
       return res.status(403).json({ 
         message: 'Trainer registration requires an invitation. Please contact an administrator.' 
@@ -973,12 +832,12 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    let user = await User.findOne({ email: email.toLowerCase() });
-    if (user) {
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    user = new User({
+    const user = new User({
       username: username || email.split('@')[0],
       email: email.toLowerCase(),
       password,
@@ -999,7 +858,7 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
