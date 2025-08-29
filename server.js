@@ -7,6 +7,7 @@ import authRoutes from './src/api/routes/authRoutes.js';
 import trainerRoutes from './src/api/routes/trainerRoutes.js';
 import billingRoutes from './src/api/routes/billingRoutes.js';
 import sessionRoutes from './src/api/routes/sessionRoutes.js';
+import inviteRoutes from './src/api/routes/inviteRoutes.js';
 
 console.log('SERVER STARTING');
 
@@ -49,6 +50,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/trainers', trainerRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/invites', inviteRoutes);
 
 // Default route
 app.get('/', (req, res) => {
