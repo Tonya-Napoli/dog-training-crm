@@ -1,7 +1,6 @@
-// src/api/routes/inviteRoutes.js
 import express from 'express';
 import { InviteController } from '../controllers/inviteController.js';
-import { auth, adminAuth } from '../middleware/auth.js';
+import { adminAuth } from '../middleware/auth.js'; // Removed unused 'auth' import
 
 const router = express.Router();
 const inviteController = new InviteController();
@@ -32,12 +31,8 @@ router.post('/accept/:token', (req, res) =>
 // @access  Admin only
 router.get('/pending', adminAuth, async (req, res) => {
   try {
-    const { InviteModel } = await import('../models/Invite.js');
-    const pendingInvites = await InviteModel.find({ status: 'pending' })
-      .populate('createdBy', 'firstName lastName email')
-      .sort({ createdAt: -1 });
-    
-    res.json({ success: true, invites: pendingInvites });
+    // TODO: Implement when Invite model is created
+    res.json({ success: true, invites: [] });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch invites' });
   }
