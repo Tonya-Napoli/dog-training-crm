@@ -1,4 +1,3 @@
-// src/api/controllers/inviteController.js
 import { EmailService } from '../services/EmailService.js';
 import { InviteService } from '../services/InviteService.js';
 import { ValidationService } from '../services/ValidationService.js';
