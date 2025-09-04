@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 import { EmailTemplateService } from './EmailTemplateService.js';
-import { Logger } from '../utils/Logger.js';
-import { EmailServiceError } from '../utils/errors.js';
+import { Logger } from '../../utils/Logger.js';
+import { EmailServiceError } from '../../utils/errors.js';
 
 export class EmailService {
   constructor() {

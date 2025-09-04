@@ -1,5 +1,5 @@
 // src/api/services/ValidationService.js
-import { ValidationError } from '../utils/errors.js';
+import { ValidationError } from '../../utils/errors.js';
 
 export class ValidationService {
   validateEmail(email) {

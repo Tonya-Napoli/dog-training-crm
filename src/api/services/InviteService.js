@@ -1,6 +1,6 @@
 // src/api/services/InviteService.js
 import crypto from 'crypto';
-import { ValidationError } from '../utils/errors.js';
+import { ValidationError } from '../../utils/errors.js';
 import Invite from '../models/Invite.js';
 
 export class InviteService {
