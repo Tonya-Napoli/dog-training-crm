@@ -8,6 +8,7 @@ import trainerRoutes from './src/api/routes/trainerRoutes.js';
 import billingRoutes from './src/api/routes/billingRoutes.js';
 import sessionRoutes from './src/api/routes/sessionRoutes.js';
 import inviteRoutes from './src/api/routes/inviteRoutes.js';
+import reportRoutes from './src/api/routes/reportRoutes.js';
 
 console.log('SERVER STARTING');
 
@@ -51,6 +52,7 @@ app.use('/api/trainers', trainerRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/invites', inviteRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Default route
 app.get('/', (req, res) => {

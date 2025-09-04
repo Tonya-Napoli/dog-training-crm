@@ -441,6 +441,8 @@ router.post('/admin-register-client', auth, adminAuth, async (req, res) => {
 // @access  Private/Admin
 router.post('/send-trainer-invite', auth, adminAuth, async (req, res) => {
   try {
+    console.log('[DEBUG] Full request body:', JSON.stringify(req.body, null, 2));
+    console.log('[DEBUG] Request user:', JSON.stringify(req.user, null, 2));
     const { email, notes } = req.body;
 
     console.log('Received trainer invite request for:', email);
