@@ -7,9 +7,11 @@ import { Resend } from 'resend';
 import User from '../models/User.js';
 import TrainerNote from '../models/TrainerNote.js';
 import auth from '../middleware/auth.js';
+import { InviteController } from '../controllers/InviteController.js';
 
 const router = express.Router();
 const resend = new Resend(process.env.RESEND_API_KEY);
+const inviteController = new InviteController();
 
 // ======================
 // Helper Functions
@@ -859,6 +861,39 @@ router.post('/register', async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST api/auth/send-trainer-invite  
+// @desc    Send trainer invitation using new controller
+// @access  Private/Admin
+router.post('/send-trainer-invite', auth, adminAuth, async (req, res) => {
+  try {
+    // Transform the old format to new format
+    const { email, notes } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Create mock request object for the new controller
+    const mockReq = {
+      body: {
+        firstName: 'New',        // Default values since old frontend doesn't provide these
+        lastName: 'Trainer',     // You can prompt user for these later
+        email: email,
+        specialties: [],
+        message: notes || ''
+      },
+      user: req.user
+    };
+
+    // Use the new controller
+    await inviteController.sendTrainerInvite(mockReq, res);
+    
+  } catch (err) {
+    console.error('Error sending trainer invite:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
