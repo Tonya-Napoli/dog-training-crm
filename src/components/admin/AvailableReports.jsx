@@ -1,6 +1,5 @@
-// src/components/admin/AvailableReports.jsx
 import React, { useState } from 'react';
-import { generateClientGrowthReport } from '../../services/ReportService';
+import { generateClientGrowthReport } from '../../api/services/ReportService';
 import { showSuccessNotification, showErrorNotification } from '../../utils/notifications';
 
 // Constants - Clean Code: Avoid magic strings
