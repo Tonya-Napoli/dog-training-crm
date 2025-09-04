@@ -97,6 +97,56 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
+//TEMPORARY
+// Temporary debug endpoint - remove after testing
+router.get('/debug/email-config', auth, adminAuth, async (req, res) => {
+  res.json({
+    resendApiKeyExists: !!process.env.RESEND_API_KEY,
+    resendApiKeyPrefix: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 7) + '...' : 'NOT_SET',
+    fromEmail: process.env.FROM_EMAIL || 'NOT_SET',
+    frontendUrl: process.env.FRONTEND_URL || 'NOT_SET',
+    nodeEnv: process.env.NODE_ENV
+  });
+});
+// Test email endpoint using proven working code
+router.post('/test-email', auth, adminAuth, async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    console.log('🧪 Testing email with working Resend code...');
+    
+    const emailResult = await resend.emails.send({
+      from: 'onboarding@resend.dev', // Same as working emailRoutes
+      to: email,
+      subject: 'Test Trainer Invite - Debug',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">Test Email - Trainer Invite Debug</h2>
+          <p>This is a test email to debug the trainer invite system.</p>
+          <p>If you receive this, the basic email system is working.</p>
+          <p>Time: ${new Date().toISOString()}</p>
+        </div>
+      `,
+    });
+
+    console.log('✅ Test email result:', emailResult);
+    
+    res.json({
+      success: true,
+      message: 'Test email sent',
+      emailId: emailResult.id
+    });
+    
+  } catch (error) {
+    console.error('❌ Test email failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Test email failed',
+      error: error.message
+    });
+  }
+});
+
 // ======================
 // Authentication Routes
 // ======================

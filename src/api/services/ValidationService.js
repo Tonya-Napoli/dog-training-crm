@@ -3,9 +3,10 @@ import { ValidationError } from '../../utils/errors.js';
 
 export class ValidationService {
   validateEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // More comprehensive email regex that explicitly allows + signs
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     if (!email || !emailRegex.test(email)) {
-      throw new ValidationError('Valid email address is required');
+      throw new ValidationError(`Valid email address is required. Received: ${email}`);
     }
   }
 

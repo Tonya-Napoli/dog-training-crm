@@ -13,16 +13,29 @@ export class EmailService {
 
   async sendTrainerInvite(inviteData) {
     this.validateResendConfig();
+      console.log('🔧 [EmailService] Debug Info:');
+      console.log('- RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
+      console.log('- FROM_EMAIL:', process.env.FROM_EMAIL);
+      console.log('- TO_EMAIL:', inviteData.email);
+      console.log('- Invite data:', JSON.stringify(inviteData, null, 2));
+
     
     try {
       const emailTemplate = this.templateService.generateTrainerInviteTemplate(inviteData);
-      
+        console.log('🔧 [EmailService] Debug Info:');
+        console.log('- RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
+        console.log('- FROM_EMAIL:', process.env.FROM_EMAIL);
+        console.log('- TO_EMAIL:', inviteData.email);
+        console.log('- Invite data:', JSON.stringify(inviteData, null, 2));
+
       const emailResult = await this.resend.emails.send({
         from: this.fromEmail,
         to: inviteData.email,
         subject: emailTemplate.subject,
         html: emailTemplate.html
       });
+      
+      console.log(`[EmailService] Resend API Response:`, JSON.stringify(emailResult, null, 2));
 
       this.logger.info(`Trainer invite sent to ${inviteData.email}`, { emailId: emailResult.id });
       
@@ -32,6 +45,13 @@ export class EmailService {
         emailId: emailResult.id 
       };
     } catch (error) {
+      console.error('[EmailService] Resend Error Details:', {
+        message: error.message,
+        name: error.name,
+        status: error.status,
+        body: error.body
+      });
+      
       this.logger.error(`Failed to send trainer invite: ${error.message}`);
       throw new EmailServiceError(`Failed to send trainer invite: ${error.message}`);
     }
