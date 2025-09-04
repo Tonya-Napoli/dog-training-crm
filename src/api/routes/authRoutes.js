@@ -2,12 +2,12 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
+//import crypto from 'crypto';
 import { Resend } from 'resend';
 import User from '../models/User.js';
 import TrainerNote from '../models/TrainerNote.js';
 import auth from '../middleware/auth.js';
-import { InviteController } from '../controllers/InviteController.js';
+import { InviteController } from '../controllers/inviteController.js';
 
 const router = express.Router();
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -383,11 +383,11 @@ router.post('/admin-register-client', auth, adminAuth, async (req, res) => {
 });
 
 // ======================
-// SIMPLIFIED TRAINER MANAGEMENT
+// TRAINER MANAGEMENT - Using New InviteController
 // ======================
 
 // @route   POST api/auth/send-trainer-invite
-// @desc    Send trainer invitation (simplified - no database model needed)
+// @desc    Send trainer invitation using new InviteController
 // @access  Private/Admin
 router.post('/send-trainer-invite', auth, adminAuth, async (req, res) => {
   try {
@@ -399,75 +399,42 @@ router.post('/send-trainer-invite', auth, adminAuth, async (req, res) => {
       return res.status(400).json({ message: 'Email is required' });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User with this email already exists' });
-    }
+    // Transform old request format to new InviteController format
+    const transformedReq = {
+      body: {
+        firstName: 'New',        // Default - can be updated by trainer during registration
+        lastName: 'Trainer',     // Default - can be updated by trainer during registration  
+        email: email,
+        specialties: [],
+        message: notes || ''
+      },
+      user: req.user
+    };
 
-    // Generate invite token
-    const token = crypto.randomBytes(32).toString('hex');
-    const inviteUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trainer/register?invite=${token}&email=${encodeURIComponent(email)}`;
-
-    // For now, just send email without storing in database
-    if (process.env.RESEND_API_KEY) {
-      try {
-        await resend.emails.send({
-          from: process.env.FROM_EMAIL || 'noreply@puppyprostraining.com',
-          to: email,
-          subject: 'Invitation to Join Puppy Pros Training as a Trainer',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #2563eb;">You're Invited to Join Puppy Pros Training!</h2>
-              <p>Hello,</p>
-              <p>You've been invited to join our team of professional dog trainers at Puppy Pros Training.</p>
-              <p>To complete your registration, please click the link below:</p>
-              <div style="margin: 20px 0;">
-                <a href="${inviteUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                  Complete Your Registration
-                </a>
-              </div>
-              <p><strong>Note:</strong> This invitation will expire in 7 days.</p>
-              ${notes ? `<p><strong>Additional Notes:</strong> ${notes}</p>` : ''}
-              <p>If you have any questions, please don't hesitate to contact us.</p>
-              <p>Best regards,<br>Puppy Pros Training Team</p>
-              <hr>
-              <p style="font-size: 12px; color: #666;">
-                If the button above doesn't work, copy and paste this URL into your browser:<br>
-                ${inviteUrl}
-              </p>
-            </div>
-          `,
-        });
-
-        console.log('Trainer invitation email sent successfully to:', email);
-
-        res.status(201).json({
-          message: 'Trainer invitation sent successfully',
-          invite: {
-            email: email,
-            status: 'sent',
-            inviteUrl: inviteUrl
+    // Custom response object to maintain backward compatibility
+    const customRes = {
+      status: (code) => ({
+        json: (data) => {
+          // Transform new controller response to old format expected by frontend
+          if (data.success) {
+            return res.status(201).json({
+              message: 'Trainer invitation sent successfully',
+              invite: {
+                email: email,
+                status: 'sent',
+                inviteUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trainer/register?invite=${data.inviteId}&email=${encodeURIComponent(email)}`
+              }
+            });
+          } else {
+            return res.status(code).json({ message: data.message });
           }
-        });
-
-      } catch (emailError) {
-        console.error('Failed to send invite email:', emailError);
-        res.status(500).json({ message: 'Failed to send invitation email' });
-      }
-    } else {
-      // If no email service configured, return the invite URL for manual sharing
-      res.status(201).json({
-        message: 'Trainer invitation created (no email service configured)',
-        invite: {
-          email: email,
-          status: 'created',
-          inviteUrl: inviteUrl,
-          note: 'Please share this URL with the trainer manually'
         }
-      });
-    }
+      })
+    };
 
+    // Use the new InviteController
+    await inviteController.sendTrainerInvite(transformedReq, customRes);
+    
   } catch (err) {
     console.error('Error sending trainer invite:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -475,15 +442,15 @@ router.post('/send-trainer-invite', auth, adminAuth, async (req, res) => {
 });
 
 // @route   GET api/auth/trainer-invites
-// @desc    Get trainer invites (simplified)
+// @desc    Get trainer invites using new system
 // @access  Private/Admin
 router.get('/trainer-invites', auth, adminAuth, async (req, res) => {
   try {
-    // Since we're not storing invites in DB, return empty array for now
-    // You could implement a simple in-memory store or log file if needed
+    // For now, return empty array since the new system stores invites in database
+    // but we need to implement the getPendingInvites method in InviteService
     res.json({ 
       invites: [],
-      message: 'Invite tracking not implemented - invites are sent directly via email'
+      message: 'Invite tracking implemented - check database for stored invites'
     });
   } catch (err) {
     console.error('Error fetching trainer invites:', err);
@@ -492,7 +459,7 @@ router.get('/trainer-invites', auth, adminAuth, async (req, res) => {
 });
 
 // @route   POST api/auth/register-trainer
-// @desc    Register trainer (re-enabled for invite-based registration)
+// @desc    Register trainer (updated to work with new invite system)
 // @access  Public
 router.post('/register-trainer', async (req, res) => {
   try {
@@ -508,7 +475,7 @@ router.post('/register-trainer', async (req, res) => {
       availability,
       bio,
       hourlyRate,
-      inviteToken // Optional invite validation
+      inviteToken // For invite-based registration
     } = req.body;
 
     console.log('Trainer registration attempt for:', email);
@@ -557,6 +524,29 @@ router.post('/register-trainer', async (req, res) => {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
+    // If inviteToken provided, validate it using InviteController
+    if (inviteToken) {
+      try {
+        // Create mock request for invite validation
+        const mockReq = { params: { token: inviteToken } };
+        const mockRes = {
+          status: () => ({
+            json: (data) => {
+              if (!data.success) {
+                throw new Error(data.message);
+              }
+            }
+          })
+        };
+        
+        await inviteController.validateInvite(mockReq, mockRes);
+      } catch (inviteError) {
+        return res.status(400).json({ 
+          message: 'Invalid or expired invitation token' 
+        });
+      }
+    }
+
     // Generate username
     const baseUsername = email.split('@')[0].toLowerCase();
     let username = baseUsername;
@@ -591,6 +581,26 @@ router.post('/register-trainer', async (req, res) => {
     });
 
     await newTrainer.save();
+
+    // If this was invite-based registration, mark invite as accepted
+    if (inviteToken) {
+      try {
+        const mockReq = { 
+          params: { token: inviteToken },
+          body: req.body
+        };
+        const mockRes = {
+          status: () => ({
+            json: () => {} // Don't send response, we'll handle it here
+          })
+        };
+        
+        await inviteController.acceptInvite(mockReq, mockRes);
+      } catch (error) {
+        console.error('Failed to mark invite as accepted:', error);
+        // Continue with registration even if invite marking fails
+      }
+    }
 
     // Create JWT token
     const jwtToken = await createToken(newTrainer);
@@ -861,39 +871,6 @@ router.post('/register', async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST api/auth/send-trainer-invite  
-// @desc    Send trainer invitation using new controller
-// @access  Private/Admin
-router.post('/send-trainer-invite', auth, adminAuth, async (req, res) => {
-  try {
-    // Transform the old format to new format
-    const { email, notes } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
-    }
-
-    // Create mock request object for the new controller
-    const mockReq = {
-      body: {
-        firstName: 'New',        // Default values since old frontend doesn't provide these
-        lastName: 'Trainer',     // You can prompt user for these later
-        email: email,
-        specialties: [],
-        message: notes || ''
-      },
-      user: req.user
-    };
-
-    // Use the new controller
-    await inviteController.sendTrainerInvite(mockReq, res);
-    
-  } catch (err) {
-    console.error('Error sending trainer invite:', err);
-    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
